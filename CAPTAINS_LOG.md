@@ -81,8 +81,31 @@ Three layers, only one is about code:
 
 User reviewed and approved the spec with "keep going" — design phase complete.
 
+### Plan-of-plans decided
+
+Scope of the spec is too big for a single implementation plan. Splitting into four sequential / parallel-where-possible plans, each producing **working, testable software on its own**:
+
+1. **Plan 1 — Backend Foundation:** core LLM endpoints (`/pretalk/next`, `/variants/generate`, `/context/summarize`) + LLM provider abstraction + prompt template library. Ships as a backend a developer can curl.
+2. **Plan 2 — Backend Production:** auth, rate limiting, billing, BYO API key, adaptation tracking. Ships as a production-ready backend.
+3. **Plan 3 — Evaluation & Quality:** golden eval set, LLM-as-judge harness, CI prompt regression gate, telemetry funnel.
+4. **Plan 4 — Extension v1:** Manifest V3 extension with 3 site adapters, popup overlay, end-to-end integration with backend.
+
+Order: Plan 1 must ship first (extension depends on the API). 2 and 3 can run in parallel after that. 4 needs 1 + 2.
+
+**Why this split:** A 50-task monolithic plan would be overwhelming and tends to drift. Four 10-15 task plans each have a clear finish line, and each can be reviewed / tested / shipped before the next starts.
+
+### Plan 1 written: Backend Foundation
+
+- File: `docs/superpowers/plans/2026-05-13-backend-foundation.md`
+- 10 tasks, ~50 bite-sized steps total. Each task ends with a commit + a captain's log entry.
+- Tech stack committed: **Node.js + TypeScript + Hono + Vitest + Anthropic SDK + Zod + Pino + pnpm**. ESM-only.
+- LLM: Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) — fast, cheap, plenty smart for pre-talk + variant generation. Spec allows "Haiku / 4o-mini class."
+- Hono picked for portability — runs equally on Node / Bun / Cloudflare Workers / Vercel. Defers the hosting decision.
+- Plan self-reviewed against the spec: covers Sections 5 (backend half), 6, 7 (backend components), 9 (error middleware), 10.1 (code correctness). Sections explicitly deferred to Plans 2-4 noted in the plan's own self-review.
+- Commit: `caad4da`
+
 ### What happens next
 
-- Move to implementation planning via the writing-plans skill.
-- Each implementation step appends a new entry to this log: what was built, what was decided, what surprised us.
+- Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
+- Each implementation task appends a new entry to this log: what was built, what was decided, what surprised us.
 - Commit cadence: small, descriptive commits per logical unit of work. Log entry references the commit hash where useful.
