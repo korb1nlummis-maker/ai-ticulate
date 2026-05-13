@@ -121,6 +121,13 @@ Two follow-ups were planned from the Task 1 code review. Landed one, dropped the
 
 2. **Dropped:** Plan was to delete `backend/pnpm-workspace.yaml` as redundant with `package.json`'s `pnpm.onlyBuiltDependencies: ["esbuild"]`. **Empirically false on pnpm 11.1.1.** Deleting the workspace file caused `pnpm install` to emit `ERR_PNPM_IGNORED_BUILDS` for esbuild — pnpm 11 is NOT honoring the `package.json` block here. Worse, subsequent `pnpm typecheck` / `pnpm test` failed outright because pnpm's pre-script dep-status check re-runs install and exits non-zero. Restored the file and reverted. The two files were not actually redundant: `pnpm-workspace.yaml`'s `allowBuilds:` is the only one doing work; the `package.json` block is inert. Open question for a future cleanup: invert the original plan and remove the `pnpm` block from `package.json` instead. Deferred — not blocking Task 2.
 
+### Backend Task 2 complete — Config loader
+
+- `loadConfig()` validates all env vars via Zod at startup. Missing required vars throw with a clear message — fail fast, not on first request handling.
+- `PORT` defaults to 3000, `NODE_ENV` to development; only `ANTHROPIC_API_KEY` is strictly required.
+- Test isolation pattern: snapshot `process.env` before each test, restore after — avoids cross-test pollution since `loadConfig` reads directly from `process.env`.
+- Commit: `7c28459`
+
 ### What happens next
 
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
