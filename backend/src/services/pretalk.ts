@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { LLMClient, parseJsonResponse } from '../llm/types.js';
 import { renderPrompt, loadPrompt } from '../prompts/loader.js';
+import { QATurn, formatQaHistory } from './shared.js';
 
-export type QATurn = { q: string; a: string };
+export type { QATurn };
 
 export type PretalkInput = {
   originalPrompt: string;
@@ -23,11 +24,6 @@ const ResponseSchema = z.object({
   allow_fill_in: z.boolean(),
   done: z.boolean(),
 });
-
-function formatQaHistory(qa: QATurn[]): string {
-  if (qa.length === 0) return '(none yet)';
-  return qa.map((t, i) => `Q${i + 1}: ${t.q}\nA${i + 1}: ${t.a}`).join('\n');
-}
 
 export async function runPretalk(llm: LLMClient, input: PretalkInput): Promise<PretalkOutput> {
   const tpl = loadPrompt('pretalk-next');

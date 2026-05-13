@@ -9,6 +9,13 @@ import { LLMClient } from './llm/types.js';
 
 export function createApp(llm: LLMClient): Hono {
   const app = new Hono();
+
+  app.onError((err, c) => {
+    // Task 9 will replace this with proper structured logging.
+    console.error('[unhandled error]', err);
+    return c.json({ error: 'internal_error', message: 'Something went wrong.' }, 500);
+  });
+
   app.route('/', healthRoute);
   app.route('/', pretalkRoute(llm));
   return app;
