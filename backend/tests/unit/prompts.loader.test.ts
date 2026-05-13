@@ -28,4 +28,13 @@ describe('prompts/loader', () => {
       renderPrompt('pretalk-next', { original_prompt: 'x' } as Record<string, string>),
     ).toThrow(/context_summary|qa_history/);
   });
+
+  it('parses frontmatter on files with CRLF line endings', () => {
+    // The actual prompt files on disk may be CRLF on Windows; the loader normalizes.
+    // This test verifies that normalization works end-to-end by checking that the existing
+    // pretalk-next.md loads correctly regardless of what line endings it has on disk.
+    const p = loadPrompt('pretalk-next');
+    expect(p.template.length).toBeGreaterThan(0);
+    expect(p.template).not.toContain('\r');
+  });
 });

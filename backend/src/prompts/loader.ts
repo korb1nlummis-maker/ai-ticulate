@@ -26,6 +26,7 @@ export function loadPrompt(name: string): PromptTemplate {
   } catch {
     throw new Error(`Prompt not found: ${name}`);
   }
+  raw = raw.replace(/\r\n/g, '\n');
 
   const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) {
@@ -53,10 +54,10 @@ export function loadPrompt(name: string): PromptTemplate {
 
 export function renderPrompt(name: string, vars: Record<string, string>): string {
   const tpl = loadPrompt(name);
-  const required = [...tpl.template.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]!);
+  const required = [...tpl.template.matchAll(/\{\{([\w.-]+)\}\}/g)].map((m) => m[1]!);
   const missing = required.filter((k) => !(k in vars));
   if (missing.length > 0) {
     throw new Error(`renderPrompt(${name}): missing variables ${missing.join(', ')}`);
   }
-  return tpl.template.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+  return tpl.template.replace(/\{\{([\w.-]+)\}\}/g, (_, k) => vars[k] ?? '');
 }
