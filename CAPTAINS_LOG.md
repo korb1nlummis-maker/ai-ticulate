@@ -154,3 +154,16 @@ Commit: `3e90b17`
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
 - Each implementation task appends a new entry to this log: what was built, what was decided, what surprised us.
 - Commit cadence: small, descriptive commits per logical unit of work. Log entry references the commit hash where useful.
+
+### Backend Task 3 follow-up — Review fixes applied
+
+Two Important issues from the Task 3 code review:
+
+1. **`StubLLM` now uses longest-match-wins.** Iterating `Object.entries` in insertion order ("first matching key wins") was a real footgun: future shared stubs with keys like `{"pretalk": ..., "pretalk variants": ...}` would always hit the shorter key first. Sorting keys by length descending before matching makes the natural "more specific wins" semantics work without callers having to think about it. Test added to pin the behavior.
+2. **`ANTHROPIC_MODEL` is now configurable via env.** Hardcoding the model snapshot meant production couldn't re-point at a newer Haiku or temporarily at Sonnet for evaluation without a deploy. Added to `ConfigSchema`, threaded through `Config` type. Wiring from `config.anthropicModel → AnthropicLLM(key, model)` happens in Task 5 when `createApp` is built — keeping LLM concerns out of the config layer.
+
+Also added two missing edge-case tests to `StubLLM`: "throws on no user message" and "matches against the LAST user message, not the first."
+
+Test counts: 6 StubLLM, 7 config, 1 health — 14 total.
+
+Commit: `7aeabba`
