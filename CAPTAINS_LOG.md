@@ -214,3 +214,12 @@ Also added route-level integration tests for `/pretalk/next` (200 happy path, 40
 Test counts: 25 (was 22; +3 route integration tests).
 
 Commit: `21fb96f`
+
+### Backend Task 6 complete — Live LLM integration test (env-gated)
+
+- Added `backend/tests/integration/pretalk.live.test.ts`. The test instantiates a real `AnthropicLLM` (uses the live API) and runs the full `runPretalk` pipeline against a vague prompt, asserting structural validity of the response.
+- **Env-gated via `describeLive = liveKey ? describe : describe.skip`.** When `ANTHROPIC_API_KEY` is set, the test runs. When not, it's gracefully skipped — no failures.
+- Current environment: no key set, so the test was skipped on this run. **Manual curl verification deferred** — to validate end-to-end against the real API, set `ANTHROPIC_API_KEY` in `backend/.env` (get a key from console.anthropic.com), run `pnpm test` to confirm the live test passes, and then `pnpm dev` + `curl POST /pretalk/next` to see real generated questions/chips.
+- Test count: 25 passing + 1 skipped.
+
+Commit: `a1b4661`
