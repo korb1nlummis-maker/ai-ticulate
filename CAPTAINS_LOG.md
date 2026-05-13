@@ -128,6 +128,17 @@ Two follow-ups were planned from the Task 1 code review. Landed one, dropped the
 - Test isolation pattern: snapshot `process.env` before each test, restore after — avoids cross-test pollution since `loadConfig` reads directly from `process.env`.
 - Commit: `7c28459`
 
+### Backend Task 2 follow-up — Edge-case tests
+
+Code review noted that the original 3 tests didn't lock in three edge-case behaviors that the Zod schema already handles correctly:
+- `PORT="abc"` (non-numeric) → throws
+- `NODE_ENV="staging"` (invalid enum) → throws
+- Multiple invalid vars at once → all surfaced in one aggregated message
+
+Tests added to document the contract. No production code change. All 6 config tests pass.
+
+Commit: `ef731b1`
+
 ### What happens next
 
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
