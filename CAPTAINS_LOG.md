@@ -176,3 +176,16 @@ Commit: `7aeabba`
 - Reasoning: prompts are first-class code per the design spec. Stored under `backend/prompts/`, versioned in git, diffable, and reviewable. The CI prompt-regression gate (Plan 3) will operate on these files via the loader.
 
 Commit: `74a8b1a`
+
+### Backend Task 4 follow-up — Review fixes applied
+
+Two Important issues from the Task 4 code review:
+
+1. **CRLF-safe frontmatter parsing.** The loader's frontmatter regex hard-coded `\n` line endings. On Windows with `core.autocrlf` enabled (the default), `.md` files arrive with CRLF and the regex fails — loader returns "missing frontmatter" for well-formed files. Normalizes to LF immediately after `readFileSync` now. Added `.gitattributes` to force LF on `backend/prompts/*.md` at the repo level as belt-and-braces.
+2. **Placeholder regex widened to allow kebab-case and dotted names.** Previously `\w+` silently ignored `{{user-name}}` or `{{user.profile}}` — `matchAll` returned nothing, `replace` left the literal in the output, and `renderPrompt` failed to flag the missing var. Now `[\w.-]+`.
+
+Added one regression test confirming a prompt file loads correctly on this machine (where Windows CRLF may be in play).
+
+Test counts: 5 loader + 6 StubLLM + 7 config + 1 health = 19.
+
+Commit: `e4aa621`
