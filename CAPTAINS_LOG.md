@@ -223,3 +223,15 @@ Commit: `21fb96f`
 - Test count: 25 passing + 1 skipped.
 
 Commit: `a1b4661`
+
+### Backend Task 7 complete — /variants/generate endpoint
+
+- Service `generateVariants(llm, input)` follows the Task 5 pattern exactly: stateless, takes refined prompt + context + Q&A history, loads `variants-generate.md`, calls LLM, Zod-validates response, returns 5-variant array.
+- **Strict schema: exactly 5 variants required.** Zod `.length(5)` enforces this — if the LLM returns 4 or 6, the service throws. Better to fail loudly than ship a broken UI.
+- Route at `POST /variants/generate` mirrors `/pretalk/next` (10k prompt cap, 20k summary, 20 history turns, 5k per q/a). Added per-item q/a length cap as a defensive improvement.
+- Three test layers: unit (stub LLM, 3 tests), route integration (200/400/500 paths, 3 tests), live (env-gated, skipped without API key).
+- Reused `QATurn` + `formatQaHistory` from `services/shared.ts` — no duplication of prompt formatting helpers between services.
+
+Test counts: 31 passing + 2 live tests skipped (pretalk + variants).
+
+Commit: `3a9293e`
