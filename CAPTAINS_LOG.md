@@ -189,3 +189,15 @@ Added one regression test confirming a prompt file loads correctly on this machi
 Test counts: 5 loader + 6 StubLLM + 7 config + 1 health = 19.
 
 Commit: `e4aa621`
+
+### Backend Task 5 complete — /pretalk/next endpoint + factory rewire
+
+- `runPretalk(llm, input)` service — stateless. Takes original prompt + context summary + Q&A history, returns next question + chips + done flag. Client always carries the full Q&A history.
+- Route `POST /pretalk/next` validates body with Zod (max prompt 10k chars, max history 20 turns), returns 400 with `details` on invalid input.
+- Rewrote `server.ts` to a `createApp(llm)` factory pattern. Removed the previous module-level `app` export and the `{} as LLMClient` test-mode escape hatch — tests now always construct their own app via `createApp(stubLLM)`. This was a Task 3 follow-up review concern: the workaround would have hidden real LLM-injection bugs in tests.
+- Existing health test migrated to the new factory pattern.
+- `ANTHROPIC_MODEL` from config (Task 3 follow-up) now wired through: `new AnthropicLLM(cfg.anthropicApiKey, cfg.anthropicModel)` in the entry-point block.
+
+Test counts: 3 pretalk + 5 loader + 6 StubLLM + 7 config + 1 health = 22 total.
+
+Commit: `3125493`
