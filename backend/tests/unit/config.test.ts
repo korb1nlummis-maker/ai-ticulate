@@ -14,12 +14,14 @@ describe('loadConfig', () => {
 
   it('returns parsed config when all required env vars are set', () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.ANTHROPIC_MODEL = 'claude-sonnet-4-6';
     process.env.PORT = '4000';
     process.env.NODE_ENV = 'development';
 
     const cfg = loadConfig();
 
     expect(cfg.anthropicApiKey).toBe('sk-ant-test');
+    expect(cfg.anthropicModel).toBe('claude-sonnet-4-6');
     expect(cfg.port).toBe(4000);
     expect(cfg.nodeEnv).toBe('development');
   });
@@ -33,6 +35,13 @@ describe('loadConfig', () => {
 
     expect(cfg.port).toBe(3000);
     expect(cfg.nodeEnv).toBe('development');
+  });
+
+  it('defaults ANTHROPIC_MODEL to the configured Haiku snapshot', () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    delete process.env.ANTHROPIC_MODEL;
+    const cfg = loadConfig();
+    expect(cfg.anthropicModel).toBe('claude-haiku-4-5-20251001');
   });
 
   it('throws a clear error if ANTHROPIC_API_KEY is missing', () => {
