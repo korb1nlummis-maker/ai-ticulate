@@ -2,18 +2,24 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { pathToFileURL } from 'node:url';
 import { healthRoute } from './routes/health.js';
+import { pretalkRoute } from './routes/pretalk.js';
+import { loadConfig } from './config.js';
+import { AnthropicLLM } from './llm/anthropic.js';
+import { LLMClient } from './llm/types.js';
 
-export const app = new Hono();
+export function createApp(llm: LLMClient): Hono {
+  const app = new Hono();
+  app.route('/', healthRoute);
+  app.route('/', pretalkRoute(llm));
+  return app;
+}
 
-app.route('/', healthRoute);
-
-const entryArg = process.argv[1];
-const isEntryPoint =
-  entryArg !== undefined && import.meta.url === pathToFileURL(entryArg).href;
-
-if (isEntryPoint) {
-  const port = Number(process.env.PORT ?? 3000);
-  serve({ fetch: app.fetch, port }, ({ port }) => {
+const entryPath = process.argv[1];
+if (entryPath && import.meta.url === pathToFileURL(entryPath).href) {
+  const cfg = loadConfig();
+  const llm = new AnthropicLLM(cfg.anthropicApiKey, cfg.anthropicModel);
+  const app = createApp(llm);
+  serve({ fetch: app.fetch, port: cfg.port }, ({ port }) => {
     console.log(`Listening on http://localhost:${port}`);
   });
 }
