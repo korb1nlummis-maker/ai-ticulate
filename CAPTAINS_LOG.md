@@ -104,6 +104,15 @@ Order: Plan 1 must ship first (extension depends on the API). 2 and 3 can run in
 - Plan self-reviewed against the spec: covers Sections 5 (backend half), 6, 7 (backend components), 9 (error middleware), 10.1 (code correctness). Sections explicitly deferred to Plans 2-4 noted in the plan's own self-review.
 - Commit: `caad4da`
 
+### Backend Task 1 complete — Hono skeleton + /health
+
+- Created `backend/` subdirectory. Initialized as a pnpm package (`@ai-ticulate/backend`, private, ESM).
+- Picked Hono as the HTTP framework. Why: lightweight, modern, runs equally on Node / Bun / Cloudflare Workers / Vercel — keeps hosting decisions deferred to a later phase.
+- Vitest for tests. ESM-only TypeScript config (`tsconfig.json` with `moduleResolution: Bundler`).
+- TDD applied: wrote the failing `/health` integration test first, confirmed it failed for the right reason (module not found), then implemented `routes/health.ts` and `server.ts` to make it pass.
+- Manual curl verification of the running dev server returned `{"status":"ok"}`.
+- Commit: `951e4ac`
+
 ### What happens next
 
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
