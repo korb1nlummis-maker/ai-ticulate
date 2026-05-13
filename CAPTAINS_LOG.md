@@ -113,6 +113,14 @@ Order: Plan 1 must ship first (extension depends on the API). 2 and 3 can run in
 - Manual curl verification of the running dev server returned `{"status":"ok"}`.
 - Commit: `951e4ac`
 
+### Backend Task 1 follow-up — Typecheck now covers tests; pnpm-workspace.yaml stays
+
+Two follow-ups were planned from the Task 1 code review. Landed one, dropped the other based on empirical evidence:
+
+1. **Landed:** Removed `"tests"` from the `tsconfig.json` exclude array. Why: `pnpm typecheck` previously did NOT typecheck test files, which silently allowed `any`-typed tests through. Now the whole tree is typechecked. Confirmed: `pnpm typecheck` still passes — test files are well-typed. Commit: `c5e6eb1`.
+
+2. **Dropped:** Plan was to delete `backend/pnpm-workspace.yaml` as redundant with `package.json`'s `pnpm.onlyBuiltDependencies: ["esbuild"]`. **Empirically false on pnpm 11.1.1.** Deleting the workspace file caused `pnpm install` to emit `ERR_PNPM_IGNORED_BUILDS` for esbuild — pnpm 11 is NOT honoring the `package.json` block here. Worse, subsequent `pnpm typecheck` / `pnpm test` failed outright because pnpm's pre-script dep-status check re-runs install and exits non-zero. Restored the file and reverted. The two files were not actually redundant: `pnpm-workspace.yaml`'s `allowBuilds:` is the only one doing work; the `package.json` block is inert. Open question for a future cleanup: invert the original plan and remove the `pnpm` block from `package.json` instead. Deferred — not blocking Task 2.
+
 ### What happens next
 
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
