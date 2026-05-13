@@ -139,6 +139,16 @@ Tests added to document the contract. No production code change. All 6 config te
 
 Commit: `ef731b1`
 
+### Backend Task 3 complete — LLM provider abstraction
+
+- Single `LLMClient` interface. All services depend on this — swapping LLM providers will be a one-line change in the server bootstrap, not a refactor.
+- `AnthropicLLM` is the production implementation. Uses Claude Haiku 4.5 (model id `claude-haiku-4-5-20251001`) — fast and cheap, sufficient for pre-talk follow-up generation and variant production per the spec's "Haiku / 4o-mini class" guidance.
+- `StubLLM` enables fast deterministic unit tests of services without hitting the real API. Substring-matches keys against the last user message; first matching key wins. Tests inject canned responses by user-message-substring.
+- `parseJsonResponse()` helper handles the common case where LLMs wrap JSON output in markdown code fences. Strips fences, parses, validates with Zod.
+- Decision: NOT writing unit tests that mock the Anthropic SDK. Reason: mocking SDKs produces tests that verify the mock, not the integration. The real assurance happens in Task 6+ via env-gated tests that call the live API.
+
+Commit: `3e90b17`
+
 ### What happens next
 
 - Pick execution approach for Plan 1 (subagent-driven recommended, inline as alternative).
