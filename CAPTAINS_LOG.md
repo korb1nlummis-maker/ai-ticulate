@@ -167,3 +167,12 @@ Also added two missing edge-case tests to `StubLLM`: "throws on no user message"
 Test counts: 6 StubLLM, 7 config, 1 health — 14 total.
 
 Commit: `7aeabba`
+
+### Backend Task 4 complete — Prompt template library
+
+- Three initial templates: `pretalk-next`, `variants-generate`, `context-summarize`. Markdown with YAML-lite frontmatter (`name`, `description`, `model`, `temperature`) + body with `{{var}}` placeholders.
+- Loader caches parsed templates in a module-level Map. First read parses + caches; subsequent reads of the same name are O(1).
+- Render-time check: if a template uses `{{foo}}` and the caller didn't pass `foo`, throw — fail loudly, not silently with empty strings.
+- Reasoning: prompts are first-class code per the design spec. Stored under `backend/prompts/`, versioned in git, diffable, and reviewable. The CI prompt-regression gate (Plan 3) will operate on these files via the loader.
+
+Commit: `74a8b1a`
