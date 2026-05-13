@@ -65,9 +65,24 @@ Three layers, only one is about code:
 - **This log:** `CAPTAINS_LOG.md` — maintained per user request; updated as work happens.
 - **Brainstorm visuals:** preserved in `.superpowers/brainstorm/` for reference (welcome, platform, pre-talk flow, variants, extension style, decisions recap, architecture, components, dataflow, errors, testing).
 
+### Git initialized + pushed to private GitHub
+
+- Local git repo initialized at project root.
+- Local commit identity set to `lummis` / `lummislummis@outlook.com` — scoped to this repo (`.git/config`), not the user's global git config.
+- `.gitignore` created with `.superpowers/` included (the brainstorm working dir is local-only by design — visuals and session state shouldn't be committed).
+- Initial commit `5d23ff6` covers: the design spec, this log, and the gitignore.
+- Branch renamed `master` → `main` (modern default; matches GitHub's convention).
+- Private repo created via `gh repo create ai-ticulate --private --source=. --push` under the user's GitHub account `korb1nlummis-maker`.
+- Remote URL: `https://github.com/korb1nlummis-maker/ai-ticulate.git`.
+
+**Why this matters:** From now on, every step is preserved in version control. The captain's log becomes the *human-readable* narrative; git history is the *machine-precise* record. Both should agree.
+
+### Spec approved by user
+
+User reviewed and approved the spec with "keep going" — design phase complete.
+
 ### What happens next
 
-- User reviews the spec.
-- Spec gets approved (or revised based on feedback).
 - Move to implementation planning via the writing-plans skill.
 - Each implementation step appends a new entry to this log: what was built, what was decided, what surprised us.
+- Commit cadence: small, descriptive commits per logical unit of work. Log entry references the commit hash where useful.
