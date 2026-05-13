@@ -201,3 +201,16 @@ Commit: `e4aa621`
 Test counts: 3 pretalk + 5 loader + 6 StubLLM + 7 config + 1 health = 22 total.
 
 Commit: `3125493`
+
+### Backend Task 5 follow-up — Pattern fixes for Tasks 7/8
+
+Two Important review findings, fixed before tasks 7 and 8 copy the pattern:
+
+1. **Extracted `QATurn` + `formatQaHistory` to `backend/src/services/shared.ts`.** Both will be used by `variants` (Task 7) and `context` (Task 8) services. Keeping them file-private in `pretalk.ts` would have forced copy-paste or re-invention — a silent class of prompt-format-drift bugs.
+2. **Added minimal `app.onError` handler in `createApp`.** Now any unhandled throw from a service returns a JSON envelope `{error: 'internal_error', message: 'Something went wrong.'}` with status 500 instead of Hono's default bare text response. Task 9 will replace the `console.error` with structured Pino logging — this is just the contract placeholder so 3 endpoints inherit the same response shape.
+
+Also added route-level integration tests for `/pretalk/next` (200 happy path, 400 invalid body, 500 service-throws-returns-JSON). The pattern will be replicated for `/variants/generate` and `/context/summarize`.
+
+Test counts: 25 (was 22; +3 route integration tests).
+
+Commit: `21fb96f`
