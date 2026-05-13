@@ -39,4 +39,22 @@ describe('loadConfig', () => {
     delete process.env.ANTHROPIC_API_KEY;
     expect(() => loadConfig()).toThrow(/ANTHROPIC_API_KEY/);
   });
+
+  it('throws if PORT is non-numeric', () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.PORT = 'not-a-number';
+    expect(() => loadConfig()).toThrow(/PORT/);
+  });
+
+  it('throws if NODE_ENV is not one of the allowed values', () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.NODE_ENV = 'staging';
+    expect(() => loadConfig()).toThrow(/NODE_ENV/);
+  });
+
+  it('aggregates multiple invalid env vars into one error message', () => {
+    delete process.env.ANTHROPIC_API_KEY;
+    process.env.PORT = 'not-a-number';
+    expect(() => loadConfig()).toThrow(/ANTHROPIC_API_KEY.*PORT|PORT.*ANTHROPIC_API_KEY/);
+  });
 });
