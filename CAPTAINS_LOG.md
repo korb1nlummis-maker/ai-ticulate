@@ -93,6 +93,19 @@ Live test #5 (claude.ai): the meta-prompt text landed in Claude's box but the me
 
 Commit: ceb9414
 
+### Live-test fix #6 — surgical fixes from real claude.ai diagnostics
+
+Live test #5's "Copy diagnostics" output gave us ground truth from claude.ai for the first time. Acted on it directly:
+
+1. **Claude response reading** — Claude's response paragraphs use `.font-claude-response-body` (not the guessed `[data-testid="assistant-message"]`). `getLatestResponseText` now reads those, scoped to paragraphs after the last `[data-testid="user-message"]`, via their tightest common ancestor so marker lines between paragraphs are captured. `diagnose()` updated to check the real selector.
+2. **Structural fallback** now excludes `<script>`/`<style>`/`<noscript>`/`<template>`/`<svg>` — it had been grabbing a Cloudflare `<script>` tag's contents as the "response".
+3. **Markdown-proof markers** — claude.ai renders markdown, so `### QUESTION` became an invisible heading. Meta-prompt templates now instruct the AI to write `QUESTION` / `SUGGESTIONS` / `STATUS` / `OPTION n` as plain-text lines (no `#`, no markdown). The parser's `classify()` now accepts an optional leading `#` run, so both forms parse.
+4. **Send hardening** — `findSendButton` now rejects buttons whose aria-label indicates a non-send action (it had matched "Add files, connectors, and more"). `clickSend` also dispatches `keypress` (not just keydown/keyup). `diagnose()` now dumps every button's aria-label/title/type/disabled state so the real send button can be pinned if Enter-send still proves unreliable.
+
+73 tests passing.
+
+Commit: f18fd30
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
