@@ -139,6 +139,19 @@ All 13 tasks done. ai-ticulate is a working Manifest V3 browser extension:
 
 **Next:** load it unpacked, run the verification checklist, fix any adapter selectors that drifted, then ship.
 
+### Extension final-review fixes
+
+The whole-implementation review caught one real correctness bug + minor items, all fixed before merge:
+
+1. **AIBridge stale-response bug (important).** `sendAndAwaitResponse` captured no baseline before sending — on a real site the previous assistant message is still in the DOM and the stop-generating control hasn't appeared, so the first poll would resolve with the STALE prior response. Unit tests missed it because `FakeAdapter.clickSend()` cleared state (unrealistic). Fix: `FakeAdapter.clickSend()` no longer clears the response (matches real DOM behavior); `AIBridge` now captures a baseline before sending and only resolves when the response is complete AND changed from baseline AND non-empty. Regression test added.
+2. **Settings wired into the content script.** `panelSide` / `autoOpenOnLoad` were defined + editable in the options page but never read. Now the content script loads settings (falling back to defaults on failure) and passes them to `mountApp`, which honours auto-open and a left-side panel class.
+3. README Firefox output path corrected (`firefox-mv2`, not `firefox-mv3`).
+4. Removed content-script `console.log` noise from third-party pages.
+
+Test count: 57 passing.
+
+Commit: 6772781
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
