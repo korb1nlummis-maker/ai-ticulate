@@ -99,6 +99,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - `snapshot()` feeds into meta-prompts so context compounds across turns.
 - Commit: 1e05271
 
+### Extension Task 10 complete — Orchestrator state machine
+
+- `Orchestrator` ties the engine together: `start()` (send refine meta-prompt), `recordAnswer()`, `requestOptions()` (get the 5 options), `finalize()` (send the chosen prompt, return the AI's real answer).
+- State machine: idle -> refining -> presenting-options -> finalizing -> done.
+- Fully tested with `FakeAdapter` + `AIBridge` — the whole engine is verifiable without a real browser. **Milestone: the headless engine is complete.** Tasks 11-13 put a UI on it and wire it into the page.
+- Commit: 9877cbc
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
