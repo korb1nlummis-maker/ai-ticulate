@@ -56,9 +56,36 @@ export class ChatGPTAdapter implements SiteAdapter {
   setInputValue(text: string): void {
     const input = this.findInput();
     if (!input) throw new Error('ChatGPTAdapter: input not found');
-    if (input instanceof HTMLTextAreaElement) {
+
+    if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
       input.value = text;
-    } else {
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+
+    // contenteditable (ProseMirror on Claude, rich-textarea on Gemini, the
+    // contenteditable composer on ChatGPT): a raw `textContent =` set updates
+    // the visible text but NOT the editor's internal model, so the editor
+    // still believes it is empty when Send is clicked. execCommand('insertText')
+    // runs through the editor's real input pipeline so the model updates.
+    input.focus();
+    const selection = window.getSelection();
+    if (selection) {
+      const range = document.createRange();
+      range.selectNodeContents(input);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    let inserted = false;
+    try {
+      inserted = document.execCommand('insertText', false, text);
+    } catch {
+      inserted = false;
+    }
+    if (!inserted || (input.textContent ?? '') !== text) {
+      // Fallback for environments without execCommand support (e.g. the test
+      // DOM) or where it didn't take. Harmless on real sites where execCommand
+      // already succeeded.
       input.textContent = text;
     }
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -66,8 +93,29 @@ export class ChatGPTAdapter implements SiteAdapter {
 
   clickSend(): void {
     const btn = this.findSendButton();
-    if (!btn) throw new Error('ChatGPTAdapter: send button not found');
-    btn.click();
+    if (btn && !btn.disabled) {
+      btn.click();
+      return;
+    }
+    // No enabled send button found (not present yet, disabled, or the
+    // selector missed). All three sites send on a plain Enter keypress —
+    // dispatch it on the input as a robust fallback.
+    const input = this.findInput();
+    if (!input) {
+      throw new Error('ChatGPTAdapter: cannot send — no input or send button found');
+    }
+    input.focus();
+    const press = (type: 'keydown' | 'keyup'): KeyboardEvent =>
+      new KeyboardEvent(type, {
+        key: 'Enter',
+        code: 'Enter',
+        keyCode: 13,
+        which: 13,
+        bubbles: true,
+        cancelable: true,
+      } as KeyboardEventInit);
+    input.dispatchEvent(press('keydown'));
+    input.dispatchEvent(press('keyup'));
   }
 
   getLatestResponseText(): string {
