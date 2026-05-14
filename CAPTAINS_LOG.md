@@ -78,6 +78,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - Fully tested against `FakeAdapter` — deterministic, no real browser needed: happy path, timeout, adapter-not-ready.
 - Commit: 9d3c5c6
 
+### Extension Task 7 complete — Meta-prompt template library
+
+- Three meta-prompt builders: `buildRefinePrompt` (vague request -> AI asks clarifying questions), `buildOptionsPrompt` (goal + answers -> AI produces 5 distinct option prompts with [___] blanks), `buildFinalizePrompt` (passes the chosen prompt through as-is).
+- The `### QUESTION` / `### SUGGESTIONS` / `### OPTION n` / `### STATUS` markers are the contract between these templates and the Task 8 parser — they tell the user's AI to format replies so the extension can read them off the page.
+- Conceptual basis: the v1 backend prompts, rewritten as meta-prompts the user's own AI executes.
+- Commit: 49a9f0e
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
