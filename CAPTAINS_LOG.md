@@ -27,6 +27,18 @@ The `feat/polish` branch (icons + manifest, adapter hardening + engine follow-up
 
 That is the honest finish line. The planned + polished scope is done.
 
+### Live-test fix #1 — contenteditable input population + Enter-key send
+
+First live test (claude.ai): the extension loaded, the launcher appeared, the panel opened, and it successfully typed the meta-prompt into Claude's input box — but the message never sent and the panel errored out.
+
+**Root cause:** claude.ai's input is a ProseMirror contenteditable editor. `setInputValue` used `input.textContent = text`, which updates the visible text but not ProseMirror's internal model — so the editor believed it was empty when Send was clicked, and nothing sent. Same class of bug affects the Gemini (rich-textarea) and ChatGPT (contenteditable) paths.
+
+**Fix:** `setInputValue` now uses `document.execCommand('insertText')` after focusing + selecting the editor's contents — this runs through the editor's real input pipeline so the model updates. A `textContent` fallback covers environments without execCommand (the test DOM). Also: `clickSend` now falls back to dispatching an Enter keypress when no enabled send button is found — all three sites send on Enter, and this also covers the render-race where the button is briefly disabled right after input.
+
+Applied to all three adapters. 60 tests passing.
+
+Commit: 4181420
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
