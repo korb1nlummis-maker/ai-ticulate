@@ -26,12 +26,14 @@
           </div>
         </div>
         <fieldset class="composer">
-          <div
-            contenteditable="true"
-            aria-label="Write your prompt to Claude"
-            class="ProseMirror"
-            role="textbox"
-          ></div>
+          <div data-testid="chat-input">
+            <div
+              contenteditable="true"
+              aria-label="Write your prompt to Claude"
+              class="ProseMirror"
+              role="textbox"
+            ></div>
+          </div>
           <button aria-label="Send message" type="button">Send</button>
         </fieldset>
       </main>

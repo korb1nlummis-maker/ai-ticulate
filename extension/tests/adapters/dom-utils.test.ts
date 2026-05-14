@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { findLatestMessageTextStructurally } from '../../src/adapters/dom-utils.js';
+import {
+  findLatestMessageTextStructurally,
+  insertTextIntoEditable,
+} from '../../src/adapters/dom-utils.js';
 
 /**
  * Build a DOM with our own injected panel plus a couple of message-like blocks,
@@ -76,5 +79,16 @@ describe('findLatestMessageTextStructurally', () => {
     main.appendChild(tiny);
     document.body.replaceChildren(main);
     expect(findLatestMessageTextStructurally()).toBe('');
+  });
+});
+
+describe('insertTextIntoEditable', () => {
+  it('lands text into a contenteditable element', () => {
+    const div = document.createElement('div');
+    div.setAttribute('contenteditable', 'true');
+    document.body.replaceChildren(div);
+    const ok = insertTextIntoEditable(div, 'hello world');
+    expect(ok).toBe(true);
+    expect(div.textContent ?? '').toContain('hello world');
   });
 });

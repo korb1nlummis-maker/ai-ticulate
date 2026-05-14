@@ -89,3 +89,74 @@ export function looksLikeNonSendButton(btn: Element): boolean {
   const label = (btn.getAttribute('aria-label') ?? '').toLowerCase();
   return NON_SEND_LABEL_WORDS.some((w) => label.includes(w));
 }
+
+/**
+ * Insert text into a contenteditable editor as robustly as possible.
+ * Modern AI chat editors (ProseMirror on Claude, etc.) run a MutationObserver
+ * that REVERTS naive `textContent` changes — so we must go through the editor's
+ * real input pipeline. Tries, in order: a synthetic paste event (rich editors
+ * have robust paste handling), execCommand insertText, a beforeinput event,
+ * then textContent as a last resort. Returns true if the text appears to have
+ * landed.
+ */
+export function insertTextIntoEditable(el: HTMLElement, text: string): boolean {
+  el.focus();
+  const selectAll = (): void => {
+    const sel = window.getSelection();
+    if (!sel) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+  const landed = (): boolean => (el.textContent ?? '').includes(text);
+
+  // Strategy 1: synthetic paste — ProseMirror & most rich editors handle this well.
+  try {
+    selectAll();
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    el.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }),
+    );
+  } catch {
+    /* not supported here */
+  }
+
+  // Strategy 2: execCommand insertText.
+  if (!landed()) {
+    try {
+      selectAll();
+      document.execCommand('insertText', false, text);
+    } catch {
+      /* not supported here */
+    }
+  }
+
+  // Strategy 3: beforeinput carrying the data.
+  if (!landed()) {
+    try {
+      selectAll();
+      el.dispatchEvent(
+        new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertFromPaste',
+          data: text,
+        }),
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Strategy 4: last resort — direct textContent (ProseMirror may revert this).
+  if (!landed()) {
+    el.textContent = text;
+  }
+
+  el.dispatchEvent(
+    new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
+  );
+  return landed();
+}

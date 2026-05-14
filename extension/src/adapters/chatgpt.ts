@@ -1,5 +1,9 @@
 import { AdapterDiagnostics, SiteAdapter } from './types.js';
-import { findLatestMessageTextStructurally, looksLikeNonSendButton } from './dom-utils.js';
+import {
+  findLatestMessageTextStructurally,
+  insertTextIntoEditable,
+  looksLikeNonSendButton,
+} from './dom-utils.js';
 
 /**
  * Adapter for chatgpt.com. Uses resilient heuristics: prefers stable
@@ -66,53 +70,7 @@ export class ChatGPTAdapter implements SiteAdapter {
       return;
     }
 
-    // contenteditable editor (ProseMirror / rich-textarea / etc.): try multiple
-    // strategies, verifying the text actually landed after each.
-    input.focus();
-    const selectAll = (): void => {
-      const sel = window.getSelection();
-      if (!sel) return;
-      const range = document.createRange();
-      range.selectNodeContents(input);
-      sel.removeAllRanges();
-      sel.addRange(range);
-    };
-    const landed = (): boolean => (input.textContent ?? '').includes(text);
-
-    // Strategy 1: execCommand insertText (runs through the editor's input pipeline)
-    selectAll();
-    try {
-      document.execCommand('insertText', false, text);
-    } catch {
-      /* not supported here */
-    }
-
-    // Strategy 2: beforeinput event carrying the data (ProseMirror listens for this)
-    if (!landed()) {
-      selectAll();
-      try {
-        input.dispatchEvent(
-          new InputEvent('beforeinput', {
-            bubbles: true,
-            cancelable: true,
-            inputType: 'insertText',
-            data: text,
-          }),
-        );
-      } catch {
-        /* ignore */
-      }
-    }
-
-    // Strategy 3: last-resort direct textContent set
-    if (!landed()) {
-      input.textContent = text;
-    }
-
-    // Always fire input so the editor / framework state syncs.
-    input.dispatchEvent(
-      new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
-    );
+    insertTextIntoEditable(input, text);
   }
 
   clickSend(): void {
@@ -187,11 +145,19 @@ export class ChatGPTAdapter implements SiteAdapter {
     // responseContainer: reuse the same selectors getLatestResponseText relies on.
     const responseEl = document.querySelector('[data-message-author-role="assistant"]');
     const notes: string[] = [];
-    if (input)
+    if (input) {
+      const attrs = Array.from(input.attributes)
+        .map((a) => `${a.name}="${a.value}"`)
+        .join(' ');
       notes.push(
-        `input: <${input.tagName.toLowerCase()}> ${input.getAttribute('id') ? '#' + input.getAttribute('id') : ''}`.trim(),
+        `input: <${input.tagName.toLowerCase()} ${attrs}> contentEditable=${input.isContentEditable}`,
       );
-    else notes.push('input: NOT FOUND');
+      // Surrounding structure (two levels up) so the real editable can be located.
+      const ctx = input.parentElement?.parentElement ?? input.parentElement ?? input;
+      notes.push(`input context outerHTML (first 700): ${ctx.outerHTML.slice(0, 700)}`);
+    } else {
+      notes.push('input: NOT FOUND');
+    }
     if (sendButton)
       notes.push(`sendButton: aria-label="${sendButton.getAttribute('aria-label') ?? ''}"`);
     else notes.push('sendButton: NOT FOUND (Enter-key send will be used)');
