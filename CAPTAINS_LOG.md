@@ -32,6 +32,14 @@ User asked to operate autonomously and not gate on permission for routine decisi
 - Verified: `pnpm build` produces a manifest with a populated `icons` field (16/32/48/128 → `icons/*.png`) and the icon files exist in the build output at correct dimensions. 57 tests still pass, typecheck clean.
 - Commit: 75e0f5261e2c06cd71f7dff11c374d03aa4d5c6a
 
+### Polish — adapter hardening + engine follow-ups
+
+- **Hardened all three site adapters.** Widened the selector fallback chains in `findInput` / `findSendButton` / `getLatestResponseText` / `isResponseComplete` for chatgpt.com, claude.ai, gemini.google.com — most-specific selectors still first (so fixture tests pass), broader generic fallbacks added last. This is the highest-value polish: the adapters can't be live-verified headless, so maximizing real-DOM resilience is what makes the product more likely to "just work."
+- **AIBridge "completed but empty" handling.** Previously a complete-but-empty response would poll until the 120s timeout. Now it rejects early (~8s) with a clear "the AI finished but produced no readable response" error. Happy path and normal timeout unchanged.
+- **buildFinalizePrompt** documented as an intentional identity function — the chosen option is already a complete prompt; ai-ticulate must pass it through untouched.
+- Test count: 58 passing.
+- Commit: 650ecdf
+
 ---
 
 ## 2026-05-14 — ARCHITECTURE PIVOT: pure browser extension
