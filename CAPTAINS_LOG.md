@@ -40,6 +40,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - Why WXT: it's the current best-maintained MV3 framework — auto-generates the manifest, handles cross-browser quirks, content-script registration, HMR. A build tool, not infrastructure — consistent with the project's zero-infra principle.
 - Commit: e6dd9ab
 
+### Extension Task 2 complete — SiteAdapter interface + registry
+
+- `SiteAdapter` interface: the stable contract every site adapter implements (`isReady`, `setInputValue`, `clickSend`, `getLatestResponseText`, `isResponseComplete`).
+- `FakeAdapter` — in-memory, test-drivable adapter. `scriptResponse()` lets tests deterministically simulate the AI replying. This is what makes the bridge + orchestrator testable without a real browser.
+- `pickAdapter(hostname)` registry. Stub ChatGPT/Claude/Gemini adapters created (real DOM logic lands in Tasks 3-5).
+- Commit: efbf037
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
