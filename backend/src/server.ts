@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { healthRoute } from './routes/health.js';
 import { pretalkRoute } from './routes/pretalk.js';
 import { variantsRoute } from './routes/variants.js';
+import { contextRoute } from './routes/context.js';
 import { loadConfig } from './config.js';
 import { AnthropicLLM } from './llm/anthropic.js';
 import { LLMClient } from './llm/types.js';
@@ -20,6 +21,7 @@ export function createApp(llm: LLMClient): Hono {
   app.route('/', healthRoute);
   app.route('/', pretalkRoute(llm));
   app.route('/', variantsRoute(llm));
+  app.route('/', contextRoute(llm));
   return app;
 }
 
