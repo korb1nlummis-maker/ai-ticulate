@@ -70,30 +70,34 @@ export class ChatGPTAdapter implements SiteAdapter {
       return;
     }
 
-    insertTextIntoEditable(input, text);
+    const landed = insertTextIntoEditable(input, text);
+    if (!landed) {
+      throw new Error('ChatGPTAdapter: could not type text into the input editor');
+    }
   }
 
   clickSend(): void {
     const input = this.findInput();
     if (input) {
       input.focus();
-      for (const type of ['keydown', 'keypress', 'keyup'] as const) {
+      const fire = (type: 'keydown' | 'keypress' | 'keyup'): void => {
         input.dispatchEvent(
           new KeyboardEvent(type, {
             key: 'Enter',
             code: 'Enter',
             keyCode: 13,
             which: 13,
+            shiftKey: false,
             bubbles: true,
             cancelable: true,
           } as KeyboardEventInit),
         );
-      }
+      };
+      fire('keydown');
+      fire('keypress');
+      fire('keyup');
     }
-    // Also click the send button if we can confidently identify one (its
-    // aria-label actually mentions "send"). Both mechanisms run for
-    // reliability — whichever works first sends; the site won't send an
-    // empty message, so a second no-op on an already-cleared editor is safe.
+    // Also click a confidently-identified send button if one is present.
     const btn = this.findSendButton();
     if (
       btn &&

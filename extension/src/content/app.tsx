@@ -160,6 +160,9 @@ function errorMessage(err: unknown): string {
   if (err instanceof Error && /not ready/i.test(err.message)) {
     return "Couldn't find the chat box on this page yet. Wait for the page to finish loading and try again.";
   }
+  if (err instanceof Error && /could not type/i.test(err.message)) {
+    return "Couldn't type into the chat box on this page. The site may have changed — try reloading the page.";
+  }
   if (err instanceof Error && /timed out/i.test(err.message)) {
     return 'Your AI took too long to respond. Try again.';
   }
