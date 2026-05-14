@@ -46,6 +46,18 @@ All 10 tasks of Plan 1 (Backend Foundation) are done. The backend now provides t
 
 **Next:** Plan 1 ready for final review + merge to `main`. Then Plan 2 (Backend Production).
 
+### Backend Task 1 follow-up CORRECTION — test typecheck was never actually working
+
+The final Plan 1 review caught that commit `c5e6eb1` ("typecheck tests folder", from the Task 1 follow-up) did NOT actually work. It removed `"tests"` from the tsconfig `exclude` array — but `exclude` only subtracts from `include`, and `include` was scoped to `src/**/*`, so test files were never in the TypeScript program. The earlier captain's log claim that "the whole tree is typechecked" was wrong.
+
+**Actual fix:** added `backend/tsconfig.typecheck.json` that extends the base config, sets `rootDir: "."`, and includes both `src/**/*` and `tests/**/*`. The `typecheck` script now runs `tsc --noEmit -p tsconfig.typecheck.json`. The base `tsconfig.json` stays as the build config (src only).
+
+Typechecking the tests folder for the first time **did surface real type errors** — 27 of them, all the same root cause: `await res.json()` returns `unknown` under modern TypeScript, and the route-integration + e2e tests were accessing `.error` / `.message` / `.question` / `.variants` etc. on those `unknown` values without typing them. Fixed by annotating each `res.json()` result with an explicit response-shape cast (e.g. `(await res.json()) as { error: string }`) in the 5 affected test files: `context.route.test.ts`, `e2e.smoke.test.ts`, `error-handling.test.ts`, `pretalk.route.test.ts`, `variants.route.test.ts`. No tsconfig strictness was loosened; no runtime behavior changed (test count still 41 passing + 4 skipped). Note: the originally-planned `vitest.config.ts` entry was dropped from `include` because no such file exists in the repo.
+
+Lesson for future: a tsconfig change that claims to widen coverage must be verified by actually checking `tsc --listFilesOnly` includes the new files — not assumed. Verified here: `tsc --listFilesOnly -p tsconfig.typecheck.json` now lists all 15 test files.
+
+Commit: `751dcdc`
+
 ## 2026-05-13 — Session 1: brainstorm → approved design
 
 ### Project conceived
