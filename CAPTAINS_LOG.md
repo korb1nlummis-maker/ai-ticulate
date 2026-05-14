@@ -10,6 +10,30 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-14 — ARCHITECTURE PIVOT: pure browser extension
+
+### The pivot — no backend, no API keys, no accounts, free
+
+The project owner course-corrected the architecture, hard and clearly:
+- *"i dont want stripe etc this is a free tool to assist people who need help"*
+- *"it should have no api points"*
+- *"there is a way to build this without api keys. it just needs to be smart"*
+- *"build the vision you see working best however that comes... you build this with my idea in mind"*
+
+**The corrected design:** ai-ticulate is a Manifest V3 **browser extension and nothing else.** No backend server, no API keys, no accounts, no billing, no database. Free. The extension behaves like a human inside the user's existing AI chat (claude.ai / chatgpt.com / gemini.google.com): it types crafted "meta-prompt" text into the chat box and reads responses off the page. ALL LLM work happens in the user's own AI session on their own subscription. The extension is pure client-side intelligence: prompt-craft + DOM automation + parsing + state.
+
+**What this means for the v1 backend work (Plan 1):** the `backend/` directory — Hono server, the three HTTP endpoints, `AnthropicLLM` client, config, logging — is **superseded**. It was built before the pivot, on the assumption of a hosted backend + company API key. That assumption is gone. The *conceptual* prompt-design work in `backend/prompts/*.md` carries forward as the basis for the extension's meta-prompt templates; the backend plumbing does not.
+
+**Why the v1 work isn't wasted, exactly:** the subagent-driven build process, the captain's-log discipline, the testing patterns, and the prompt-engineering thinking all transfer. But honestly — a hosted backend was the wrong architecture for this product, and it's better to have learned that at Plan 1 than at Plan 4. The lesson is recorded in memory ([[keep-it-simple-no-infra]]): default to the leanest client-side approach.
+
+**Actions taken:**
+- New spec: `docs/superpowers/specs/2026-05-14-ai-ticulate-extension-design.md` (supersedes the 2026-05-13 backend spec, which stays in the repo as history).
+- New plan: `docs/superpowers/plans/2026-05-14-extension.md` — 13 tasks, pure extension.
+- `backend/` removed from the working tree. Fully recoverable from git history (it was merged to `main` at commit `5fd2269`) if any of it is ever needed.
+- Old superseded plan `docs/superpowers/plans/2026-05-13-backend-foundation.md` left in place as history.
+
+---
+
 ## 2026-05-14 — Backend Foundation execution wrap
 
 ### Backend Task 10 complete — E2E smoke test
