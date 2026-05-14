@@ -63,6 +63,14 @@ The project owner course-corrected the architecture, hard and clearly:
 - **Manual live verification still required** against the real claude.ai before release (pre-release checklist item).
 - Commit: a394a2c
 
+### Extension Task 5 complete — Gemini adapter
+
+- `GeminiAdapter` implemented with resilient heuristics: `rich-textarea [contenteditable]`, `aria-label`, `message-content` with fallback chains.
+- Gemini's input is contenteditable inside a `rich-textarea` web component — `setInputValue` writes `textContent` and dispatches an `input` event.
+- Tested against a representative frozen HTML fixture, reusing the `loadFixture` helper.
+- **Milestone: all three site adapters (ChatGPT, Claude, Gemini) are complete.** All need manual live-site verification before release (pre-release checklist).
+- Commit: a8f02f4
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
