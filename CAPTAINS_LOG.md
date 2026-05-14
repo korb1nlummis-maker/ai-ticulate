@@ -120,6 +120,25 @@ The project owner course-corrected the architecture, hard and clearly:
 - Content script entrypoint: picks the adapter for the host, builds the bridge, mounts the app. **Milestone: the extension is functionally complete end-to-end** — `pnpm build` produces a loadable unpacked extension.
 - Commit: 48582a2
 
+### Extension Task 13 complete — Settings, polish, pre-release docs
+
+- `settings.ts` — typed wrapper over `chrome.storage.local` (panel side, auto-open). Minimal options page to edit them. `@types/chrome`/WXT chrome typings weren't available, so `settings.ts` carries a minimal `declare const chrome` for just the `storage.local` slice it uses — the MV3 runtime provides the real global, tests inject an in-memory mock.
+- `README.md` with build/load instructions and the pre-release manual verification checklist (the adapters need one real-site confirmation before release — same shape of deferred verification as Plan 1's live API tests).
+- Chrome + Firefox builds: both produced output under `.output/` (`chrome-mv3` and `firefox-mv2`, each including `options.html`). Firefox emits a non-fatal warning about future `data_collection_permissions` (required for *new* extensions from Nov 2025) — does not block the build.
+- Commit: f9bb2b4
+
+### ai-ticulate Extension COMPLETE — the product is built
+
+All 13 tasks done. ai-ticulate is a working Manifest V3 browser extension:
+- Injects a launcher + panel into chatgpt.com / claude.ai / gemini.google.com
+- Takes a vague request, sends crafted meta-prompts into the user's own AI chat, parses the replies, runs a multi-turn refinement, helps the user send a far better final prompt
+- Zero backend, zero API keys, zero accounts, zero cost — pure client-side
+- Engine (adapters, bridge, templates, parser, task tracker, orchestrator) fully unit-tested with a deterministic FakeAdapter; UI components tested; integration tested. 56 tests total.
+
+**Outstanding before release:** manual verification of the three site adapters against the live sites (see extension/README.md checklist). The adapters use resilient heuristics + fixture tests, but real-DOM confirmation is the one thing that can't be done headless.
+
+**Next:** load it unpacked, run the verification checklist, fix any adapter selectors that drifted, then ship.
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
