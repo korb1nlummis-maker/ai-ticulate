@@ -54,6 +54,21 @@ Commit: 9477504
 
 ---
 
+### Live-test fix #3 — reading the AI's response off the page
+
+Live test #3 (claude.ai): big progress — the message SENT and Claude responded. But "nothing came back to the extension" → error. Diagnosis: `getLatestResponseText()`'s guessed selectors don't match Claude's real response-container DOM, so the bridge never sees a response and the empty-response-grace logic rejects.
+
+**Fixes:**
+1. **Structural fallback for `getLatestResponseText()`** (`adapters/dom-utils.ts`): when the specific selectors find nothing, find the latest assistant turn structurally — the last "message-like" text block in `<main>` (substantial text, a tight wrapper around it, not our own panel). Class-name-independent, degrades gracefully when sites redesign.
+2. **DOM-intelligence dump in `diagnose()`**: when the response container isn't found, the diagnostics now list the page's `data-testid` values and the last 10 substantial text blocks (tag/class/testid/snippet). `AppController` already logs diagnostics to the console on failure — so a failure now hands us the exact DOM structure instead of requiring another guess.
+3. **Echo guard in `AIBridge`**: the structural fallback could briefly return our just-sent meta-prompt as the "latest message" before the assistant's turn renders. The bridge now rejects a candidate response that is just our sent text echoed back.
+
+70 tests passing.
+
+Commit: ced4110
+
+---
+
 ## 2026-05-14 — Extension merged to main; v1 built
 
 ### feat/extension merged to main
