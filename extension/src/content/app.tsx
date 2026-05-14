@@ -102,6 +102,12 @@ export class AppController {
   close(): void {
     this.setOpen(false);
   }
+
+  /** Reset back to the idle state so the user can start a fresh request. */
+  reset(): void {
+    this.orchestrator.reset();
+    this.setView({ kind: 'idle' });
+  }
 }
 
 function errorMessage(err: unknown): string {
@@ -142,6 +148,7 @@ export function mountApp(
             onAnswerQuestions={(a) => void controller.answerQuestions(a)}
             onPickOption={(p) => void controller.pickOption(p)}
             onClose={() => controller.close()}
+            onRestart={() => controller.reset()}
           />
         )}
       </>,

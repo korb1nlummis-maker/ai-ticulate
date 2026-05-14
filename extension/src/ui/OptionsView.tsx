@@ -38,7 +38,7 @@ function OptionWithBlanks({
 
   return (
     <div className="ait-option">
-      <div>
+      <div className="ait-option-text">
         {segments.map((seg, i) => (
           <span key={i}>
             {seg}
@@ -47,13 +47,18 @@ function OptionWithBlanks({
                 className="ait-input"
                 value={values[i] ?? ''}
                 placeholder="fill in"
+                aria-label="Fill in the blank"
                 onChange={(e) => setValue(i, e.target.value)}
               />
             )}
           </span>
         ))}
       </div>
-      <button className="ait-button" type="button" onClick={handleUse}>
+      <button
+        className="ait-button ait-button-block"
+        type="button"
+        onClick={handleUse}
+      >
         Use this
       </button>
     </div>
@@ -62,7 +67,10 @@ function OptionWithBlanks({
 
 export function OptionsView({ options, onPick }: OptionsViewProps) {
   return (
-    <div>
+    <div className="ait-options">
+      <div className="ait-subtitle">
+        Pick the version that fits best. Some have blanks you can personalize.
+      </div>
       {options.map((option, i) =>
         option.includes(BLANK) ? (
           <OptionWithBlanks key={i} option={option} onPick={onPick} />
@@ -73,7 +81,7 @@ export function OptionsView({ options, onPick }: OptionsViewProps) {
             type="button"
             onClick={() => onPick(option)}
           >
-            {option}
+            <span className="ait-option-text">{option}</span>
           </button>
         ),
       )}

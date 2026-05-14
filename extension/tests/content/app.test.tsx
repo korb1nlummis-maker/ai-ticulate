@@ -33,6 +33,16 @@ describe('AppController', () => {
     expect(controller.view.kind).toBe('error');
   });
 
+  it('reset() returns the view to idle', async () => {
+    const { adapter, controller } = setup();
+    adapter.setReady(false);
+    await controller.submitRequest('anything');
+    expect(controller.view.kind).toBe('error');
+
+    controller.reset();
+    expect(controller.view.kind).toBe('idle');
+  });
+
   it('notifies subscribers on view change', async () => {
     const { adapter, controller } = setup();
     let calls = 0;

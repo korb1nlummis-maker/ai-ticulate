@@ -34,4 +34,24 @@ describe('Panel', () => {
     optionButtons[2]!.click();
     expect(onPick).toHaveBeenCalledWith('C');
   });
+
+  it('renders a "Start over" button in the done view and fires onRestart when clicked', () => {
+    const onRestart = vi.fn();
+    const { getAllByRole } = render(
+      <Panel
+        view={{ kind: 'done', finalAnswerPreview: 'a refined answer' }}
+        onSubmitRequest={vi.fn()}
+        onAnswerQuestions={vi.fn()}
+        onPickOption={vi.fn()}
+        onClose={vi.fn()}
+        onRestart={onRestart}
+      />,
+    );
+    const startOver = getAllByRole('button').find((b) =>
+      /start over/i.test(b.textContent ?? ''),
+    );
+    expect(startOver).toBeTruthy();
+    startOver!.click();
+    expect(onRestart).toHaveBeenCalledOnce();
+  });
 });
