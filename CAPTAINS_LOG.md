@@ -235,3 +235,15 @@ Commit: `a1b4661`
 Test counts: 31 passing + 2 live tests skipped (pretalk + variants).
 
 Commit: `3a9293e`
+
+### Backend Task 8 complete — /context/summarize endpoint
+
+- Service `summarizeContext(llm, input)` follows the established 3-layer pattern, with one shape difference: input is a single raw chat-history string, output is a structured summary object (`topic`, `inferredUserRole`, `priorDecisions`, `activeGoal`).
+- Internal cap: service trims chat history to last 30,000 chars before sending to LLM (prompt cost / context-window protection). Route-level cap: 100,000 chars (anything longer rejected with 400).
+- Nullable fields supported: when the LLM can't infer topic/role/goal (e.g., chat is empty or off-topic), it returns nulls — Zod schema accepts these explicitly so we don't conflate "no info" with "info missing."
+- Same three test layers as pretalk and variants: unit (StubLLM, 3 tests), route integration (4 tests including 100k-char boundary), live (env-gated).
+- The "all three core endpoints" milestone is reached: `/pretalk/next`, `/variants/generate`, `/context/summarize` all working. Tasks 9 (structured logging) and 10 (e2e smoke test) remain.
+
+Test counts: 38 passing + 3 skipped (live tests env-gated).
+
+Commit: `991416c`
