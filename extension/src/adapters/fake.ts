@@ -1,4 +1,4 @@
-import { SiteAdapter } from './types.js';
+import { AdapterDiagnostics, SiteAdapter } from './types.js';
 
 /**
  * In-memory adapter for tests. Lets a test drive the "AI" deterministically:
@@ -42,5 +42,15 @@ export class FakeAdapter implements SiteAdapter {
   scriptResponse(text: string, opts: { complete: boolean }): void {
     this.responseText = text;
     this.complete = opts.complete;
+  }
+
+  diagnose(): AdapterDiagnostics {
+    return {
+      site: 'Fake',
+      inputFound: true,
+      sendButtonFound: true,
+      responseContainerFound: true,
+      notes: ['fake adapter'],
+    };
   }
 }

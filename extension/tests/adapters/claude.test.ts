@@ -37,4 +37,18 @@ describe('ClaudeAdapter', () => {
     document.body.appendChild(stop);
     expect(new ClaudeAdapter().isResponseComplete()).toBe(false);
   });
+
+  it('diagnose() reports all elements found on a healthy page', () => {
+    const diag = new ClaudeAdapter().diagnose();
+    expect(diag.site).toBe('Claude');
+    expect(diag.inputFound).toBe(true);
+    expect(diag.sendButtonFound).toBe(true);
+    expect(diag.responseContainerFound).toBe(true);
+  });
+
+  it('diagnose() reports inputFound false when the input is missing', () => {
+    document.querySelector('[contenteditable="true"]')?.remove();
+    const diag = new ClaudeAdapter().diagnose();
+    expect(diag.inputFound).toBe(false);
+  });
 });

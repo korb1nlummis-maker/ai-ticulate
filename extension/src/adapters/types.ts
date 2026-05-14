@@ -1,4 +1,17 @@
 /**
+ * A diagnostic snapshot of what an adapter can and cannot find on the current
+ * page. Surfaced on live-test failures so a screenshot becomes a precise
+ * diagnosis instead of blind selector-guessing.
+ */
+export type AdapterDiagnostics = {
+  site: string;
+  inputFound: boolean;
+  sendButtonFound: boolean;
+  responseContainerFound: boolean;
+  notes: string[];
+};
+
+/**
  * A SiteAdapter encapsulates everything site-specific about ONE AI chat site.
  * One adapter per site (chatgpt.com, claude.ai, gemini.google.com). When a site
  * redesigns, only its adapter changes.
@@ -28,4 +41,7 @@ export interface SiteAdapter {
    * (e.g. the "stop generating" control disappearing).
    */
   isResponseComplete(): boolean;
+
+  /** Report what the adapter can and cannot find on the current page — for debugging. */
+  diagnose(): AdapterDiagnostics;
 }

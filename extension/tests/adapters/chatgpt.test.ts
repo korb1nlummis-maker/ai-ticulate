@@ -37,4 +37,18 @@ describe('ChatGPTAdapter', () => {
     document.body.appendChild(stop);
     expect(new ChatGPTAdapter().isResponseComplete()).toBe(false);
   });
+
+  it('diagnose() reports all elements found on a healthy page', () => {
+    const diag = new ChatGPTAdapter().diagnose();
+    expect(diag.site).toBe('ChatGPT');
+    expect(diag.inputFound).toBe(true);
+    expect(diag.sendButtonFound).toBe(true);
+    expect(diag.responseContainerFound).toBe(true);
+  });
+
+  it('diagnose() reports inputFound false when the input is missing', () => {
+    document.querySelector('#prompt-textarea')?.remove();
+    const diag = new ChatGPTAdapter().diagnose();
+    expect(diag.inputFound).toBe(false);
+  });
 });

@@ -1,4 +1,4 @@
-import { SiteAdapter } from '../adapters/types.js';
+import { AdapterDiagnostics, SiteAdapter } from '../adapters/types.js';
 
 export type AIBridgeOptions = {
   /** How often to poll for response completion, in ms. */
@@ -87,5 +87,10 @@ export class AIBridge {
       // Give the site a tick to register the send before the first poll.
       setTimeout(poll, this.options.pollIntervalMs);
     });
+  }
+
+  /** Diagnostic report from the underlying adapter — for debugging live failures. */
+  diagnose(): AdapterDiagnostics {
+    return this.adapter.diagnose();
   }
 }

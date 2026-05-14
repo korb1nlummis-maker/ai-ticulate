@@ -1,4 +1,4 @@
-import { SiteAdapter } from './types.js';
+import { AdapterDiagnostics, SiteAdapter } from './types.js';
 
 /**
  * Adapter for chatgpt.com. Uses resilient heuristics: prefers stable
@@ -63,59 +63,80 @@ export class ChatGPTAdapter implements SiteAdapter {
       return;
     }
 
-    // contenteditable (ProseMirror on Claude, rich-textarea on Gemini, the
-    // contenteditable composer on ChatGPT): a raw `textContent =` set updates
-    // the visible text but NOT the editor's internal model, so the editor
-    // still believes it is empty when Send is clicked. execCommand('insertText')
-    // runs through the editor's real input pipeline so the model updates.
+    // contenteditable editor (ProseMirror / rich-textarea / etc.): try multiple
+    // strategies, verifying the text actually landed after each.
     input.focus();
-    const selection = window.getSelection();
-    if (selection) {
+    const selectAll = (): void => {
+      const sel = window.getSelection();
+      if (!sel) return;
       const range = document.createRange();
       range.selectNodeContents(input);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    let inserted = false;
+      sel.removeAllRanges();
+      sel.addRange(range);
+    };
+    const landed = (): boolean => (input.textContent ?? '').includes(text);
+
+    // Strategy 1: execCommand insertText (runs through the editor's input pipeline)
+    selectAll();
     try {
-      inserted = document.execCommand('insertText', false, text);
+      document.execCommand('insertText', false, text);
     } catch {
-      inserted = false;
+      /* not supported here */
     }
-    if (!inserted || (input.textContent ?? '') !== text) {
-      // Fallback for environments without execCommand support (e.g. the test
-      // DOM) or where it didn't take. Harmless on real sites where execCommand
-      // already succeeded.
+
+    // Strategy 2: beforeinput event carrying the data (ProseMirror listens for this)
+    if (!landed()) {
+      selectAll();
+      try {
+        input.dispatchEvent(
+          new InputEvent('beforeinput', {
+            bubbles: true,
+            cancelable: true,
+            inputType: 'insertText',
+            data: text,
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Strategy 3: last-resort direct textContent set
+    if (!landed()) {
       input.textContent = text;
     }
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // Always fire input so the editor / framework state syncs.
+    input.dispatchEvent(
+      new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
+    );
   }
 
   clickSend(): void {
+    const input = this.findInput();
+    if (input) {
+      input.focus();
+      for (const type of ['keydown', 'keyup'] as const) {
+        input.dispatchEvent(
+          new KeyboardEvent(type, {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true,
+          } as KeyboardEventInit),
+        );
+      }
+      return;
+    }
+    // No input handle — fall back to the send button if we can find one.
     const btn = this.findSendButton();
-    if (btn && !btn.disabled) {
+    if (btn) {
       btn.click();
       return;
     }
-    // No enabled send button found (not present yet, disabled, or the
-    // selector missed). All three sites send on a plain Enter keypress —
-    // dispatch it on the input as a robust fallback.
-    const input = this.findInput();
-    if (!input) {
-      throw new Error('ChatGPTAdapter: cannot send — no input or send button found');
-    }
-    input.focus();
-    const press = (type: 'keydown' | 'keyup'): KeyboardEvent =>
-      new KeyboardEvent(type, {
-        key: 'Enter',
-        code: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true,
-      } as KeyboardEventInit);
-    input.dispatchEvent(press('keydown'));
-    input.dispatchEvent(press('keyup'));
+    throw new Error('ChatGPTAdapter: cannot send — no input or send button found');
   }
 
   getLatestResponseText(): string {
@@ -146,5 +167,33 @@ export class ChatGPTAdapter implements SiteAdapter {
       document.querySelector('button[aria-label*="Stop" i]') ??
       document.querySelector('[aria-label*="Stop generating" i]');
     return stop === null;
+  }
+
+  diagnose(): AdapterDiagnostics {
+    const input = this.findInput();
+    const sendButton = this.findSendButton();
+    // responseContainer: reuse the same selectors getLatestResponseText relies on.
+    const responseEl = document.querySelector('[data-message-author-role="assistant"]');
+    const notes: string[] = [];
+    if (input)
+      notes.push(
+        `input: <${input.tagName.toLowerCase()}> ${input.getAttribute('id') ? '#' + input.getAttribute('id') : ''}`.trim(),
+      );
+    else notes.push('input: NOT FOUND');
+    if (sendButton)
+      notes.push(`sendButton: aria-label="${sendButton.getAttribute('aria-label') ?? ''}"`);
+    else notes.push('sendButton: NOT FOUND (Enter-key send will be used)');
+    notes.push(
+      responseEl
+        ? 'responseContainer: found'
+        : 'responseContainer: NOT FOUND (cannot read AI replies)',
+    );
+    return {
+      site: this.name,
+      inputFound: input !== null,
+      sendButtonFound: sendButton !== null,
+      responseContainerFound: responseEl !== null,
+      notes,
+    };
   }
 }

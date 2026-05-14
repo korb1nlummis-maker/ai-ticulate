@@ -16,9 +16,11 @@ export class AppController {
   private _view: PanelView = { kind: 'idle' };
   private subscribers: Subscriber[] = [];
   private orchestrator: Orchestrator;
+  private bridge: AIBridge;
   open = false;
 
   constructor(bridge: AIBridge) {
+    this.bridge = bridge;
     this.orchestrator = new Orchestrator(bridge);
   }
 
@@ -60,6 +62,22 @@ export class AppController {
     };
   }
 
+  /**
+   * Build an error view that carries BOTH the friendly message and a compact
+   * technical diagnostic line. Also logs the full diagnostics + raw error to
+   * the console so a live-test failure is precisely diagnosable.
+   */
+  private errorView(err: unknown): PanelView {
+    const diag = this.bridge.diagnose();
+    console.log('[ai-ticulate] failure diagnostics:', diag);
+    console.log('[ai-ticulate] error was:', err);
+    const diagLine =
+      `[diagnostic] input:${diag.inputFound ? '✓' : '✗'} ` +
+      `send-button:${diag.sendButtonFound ? '✓' : '✗'} ` +
+      `response-area:${diag.responseContainerFound ? '✓' : '✗'} — ${diag.site}`;
+    return { kind: 'error', message: `${errorMessage(err)}\n\n${diagLine}` };
+  }
+
   async submitRequest(text: string): Promise<void> {
     this.setView({ kind: 'loading', message: 'Asking your AI to help sharpen this…' });
     try {
@@ -70,7 +88,7 @@ export class AppController {
         await this.fetchOptions();
       }
     } catch (err) {
-      this.setView({ kind: 'error', message: errorMessage(err) });
+      this.setView(this.errorView(err));
     }
   }
 
@@ -80,7 +98,7 @@ export class AppController {
       this.setView({ kind: 'loading', message: 'Getting your 5 options…' });
       await this.fetchOptions();
     } catch (err) {
-      this.setView({ kind: 'error', message: errorMessage(err) });
+      this.setView(this.errorView(err));
     }
   }
 
@@ -95,7 +113,7 @@ export class AppController {
       const answer = await this.orchestrator.finalize(finalPrompt);
       this.setView({ kind: 'done', finalAnswerPreview: answer.slice(0, 280) });
     } catch (err) {
-      this.setView({ kind: 'error', message: errorMessage(err) });
+      this.setView(this.errorView(err));
     }
   }
 
@@ -117,6 +135,9 @@ function errorMessage(err: unknown): string {
   }
   if (err instanceof Error && /timed out/i.test(err.message)) {
     return 'Your AI took too long to respond. Try again.';
+  }
+  if (err instanceof Error && /no readable response/i.test(err.message)) {
+    return "Couldn't read your AI's reply off the page.";
   }
   return 'Something went wrong. Try again, or send your prompt as-is.';
 }

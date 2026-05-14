@@ -448,6 +448,9 @@
   padding: 12px;
   color: #8a5a1d;
   font-size: 13.5px;
+  /* The message carries a second technical diagnostic line — preserve the
+     newline so both lines render readably. */
+  white-space: pre-wrap;
 }
 
 /* --- Left-side panel placement (Settings: panelSide = 'left'). --- */
