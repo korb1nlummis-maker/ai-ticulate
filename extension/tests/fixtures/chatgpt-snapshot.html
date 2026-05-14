@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ChatGPT</title>
+  </head>
+  <body>
+    <div id="__next">
+      <main>
+        <div class="conversation-area">
+          <article data-message-author-role="user">
+            <div class="message-content">first user message</div>
+          </article>
+          <article data-message-author-role="assistant">
+            <div class="message-content">
+              <p>first assistant message</p>
+            </div>
+          </article>
+          <article data-message-author-role="user">
+            <div class="message-content">second user message</div>
+          </article>
+          <article data-message-author-role="assistant">
+            <div class="message-content">
+              <p>second assistant message</p>
+            </div>
+          </article>
+        </div>
+        <form class="composer">
+          <textarea
+            id="prompt-textarea"
+            data-testid="prompt-textarea"
+            placeholder="Ask anything"
+          ></textarea>
+          <button
+            data-testid="send-button"
+            aria-label="Send prompt"
+            type="submit"
+          >
+            Send
+          </button>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>
