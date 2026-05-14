@@ -54,4 +54,25 @@ describe('Panel', () => {
     startOver!.click();
     expect(onRestart).toHaveBeenCalledOnce();
   });
+
+  it('renders copyable diagnostics text and a "Copy diagnostics" button in the error view', () => {
+    const { container, getAllByRole } = render(
+      <Panel
+        view={{
+          kind: 'error',
+          message: 'oops',
+          diagnostics: '=== diag ===\nsite: Claude',
+        }}
+        onSubmitRequest={vi.fn()}
+        onAnswerQuestions={vi.fn()}
+        onPickOption={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(container.textContent).toContain('site: Claude');
+    const copyButton = getAllByRole('button').find((b) =>
+      /copy diagnostics/i.test(b.textContent ?? ''),
+    );
+    expect(copyButton).toBeTruthy();
+  });
 });

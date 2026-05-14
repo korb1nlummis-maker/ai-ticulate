@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { RequestInput } from './RequestInput.js';
 import { QuestionsView } from './QuestionsView.js';
 import { OptionsView } from './OptionsView.js';
@@ -9,7 +10,7 @@ export type PanelView =
   | { kind: 'questions'; questions: { question: string; suggestions: string[] }[] }
   | { kind: 'options'; options: string[] }
   | { kind: 'done'; finalAnswerPreview: string }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; message: string; diagnostics?: string };
 
 export type PanelProps = {
   view: PanelView;
@@ -73,21 +74,63 @@ export function Panel(props: PanelProps) {
         )}
 
         {view.kind === 'error' && (
-          <div className="ait-error">
-            <div className="ait-error-box" role="alert">
-              {view.message}
-            </div>
-            {props.onRestart && (
-              <button
-                className="ait-button ait-button-secondary ait-button-block"
-                onClick={props.onRestart}
-              >
-                Start over
-              </button>
-            )}
-          </div>
+          <ErrorView
+            message={view.message}
+            diagnostics={view.diagnostics}
+            onRestart={props.onRestart}
+          />
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The error view. Shows the friendly message, and — when present — the full
+ * plain-text diagnostics in a calm monospace box with a one-click
+ * "Copy diagnostics" button so a non-technical user can paste it straight back.
+ */
+function ErrorView({
+  message,
+  diagnostics,
+  onRestart,
+}: {
+  message: string;
+  diagnostics?: string;
+  onRestart?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    if (!diagnostics) return;
+    void navigator.clipboard.writeText(diagnostics).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div className="ait-error">
+      <div className="ait-error-box" role="alert">
+        {message}
+      </div>
+      {diagnostics && (
+        <>
+          <pre className="ait-diagnostics">{diagnostics}</pre>
+          <button
+            className="ait-button ait-button-secondary ait-button-block"
+            onClick={copy}
+          >
+            {copied ? 'Copied!' : 'Copy diagnostics'}
+          </button>
+        </>
+      )}
+      {onRestart && (
+        <button
+          className="ait-button ait-button-secondary ait-button-block"
+          onClick={onRestart}
+        >
+          Start over
+        </button>
+      )}
     </div>
   );
 }

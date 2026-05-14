@@ -1,11 +1,30 @@
 import { createRoot } from 'react-dom/client';
 import { AIBridge } from '../bridge/ai-bridge.js';
+import { AdapterDiagnostics } from '../adapters/types.js';
 import { Orchestrator } from '../orchestrator/orchestrator.js';
 import { ParsedResponse } from '../parser/response-parser.js';
 import { Panel, PanelView } from '../ui/Panel.js';
 import { Launcher } from '../ui/Launcher.js';
 
 type Subscriber = () => void;
+
+/**
+ * Turn an AdapterDiagnostics into a complete, plain-text, multi-line block —
+ * so a non-technical user can copy it with one click and paste it back,
+ * instead of expanding + screenshotting a nested console object.
+ */
+function formatDiagnosticsText(diag: AdapterDiagnostics): string {
+  const lines: string[] = [];
+  lines.push('=== ai-ticulate diagnostics ===');
+  lines.push(`site: ${diag.site}`);
+  lines.push(`input found: ${diag.inputFound}`);
+  lines.push(`send button found: ${diag.sendButtonFound}`);
+  lines.push(`response container found: ${diag.responseContainerFound}`);
+  lines.push('--- notes ---');
+  for (const note of diag.notes) lines.push(note);
+  lines.push('=== end ===');
+  return lines.join('\n');
+}
 
 /**
  * Owns the panel view state and wraps the orchestrator. UI callbacks call
@@ -63,19 +82,18 @@ export class AppController {
   }
 
   /**
-   * Build an error view that carries BOTH the friendly message and a compact
-   * technical diagnostic line. Also logs the full diagnostics + raw error to
-   * the console so a live-test failure is precisely diagnosable.
+   * Build an error view that carries the friendly message plus the full
+   * plain-text diagnostics block (rendered as a copyable box in the panel).
+   * Also logs the diagnostics as a single multi-line string + the raw error
+   * to the console, so a live-test failure is screenshot-friendly even
+   * without the Copy button.
    */
   private errorView(err: unknown): PanelView {
     const diag = this.bridge.diagnose();
-    console.log('[ai-ticulate] failure diagnostics:', diag);
-    console.log('[ai-ticulate] error was:', err);
-    const diagLine =
-      `[diagnostic] input:${diag.inputFound ? '✓' : '✗'} ` +
-      `send-button:${diag.sendButtonFound ? '✓' : '✗'} ` +
-      `response-area:${diag.responseContainerFound ? '✓' : '✗'} — ${diag.site}`;
-    return { kind: 'error', message: `${errorMessage(err)}\n\n${diagLine}` };
+    const diagText = formatDiagnosticsText(diag);
+    console.log('[ai-ticulate] ' + diagText);
+    console.log('[ai-ticulate] raw error:', err);
+    return { kind: 'error', message: errorMessage(err), diagnostics: diagText };
   }
 
   async submitRequest(text: string): Promise<void> {
