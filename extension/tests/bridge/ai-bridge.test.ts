@@ -29,6 +29,21 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/not ready/i);
   });
 
+  it('rejects early when the AI completes but produces no readable response', async () => {
+    const adapter = new FakeAdapter();
+    const bridge = new AIBridge(adapter, {
+      pollIntervalMs: 5,
+      timeoutMs: 5000,
+      emptyResponseGraceMs: 40,
+    });
+
+    const promise = bridge.sendAndAwaitResponse('q');
+    // The adapter reports "done" but the page shows nothing readable.
+    setTimeout(() => adapter.scriptResponse('', { complete: true }), 10);
+
+    await expect(promise).rejects.toThrow(/no readable response/i);
+  });
+
   it('does not resolve with a stale prior response left in the DOM', async () => {
     const adapter = new FakeAdapter();
     // Simulate a previous completed turn still visible in the DOM.

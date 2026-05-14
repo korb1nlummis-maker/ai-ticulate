@@ -59,6 +59,21 @@ Format your reply EXACTLY like this:
 Do not output anything else.`;
 }
 
+/**
+ * The finalize step. Intentionally an identity function — and it stays one.
+ *
+ * By the time we reach this step the user has picked one of the 5 options
+ * produced by `buildOptionsPrompt`. Each option was generated as "a complete,
+ * ready-to-send prompt"; the user may also have edited it. That text IS the
+ * prompt the user wants to send. ai-ticulate's job here is to get out of the
+ * way: wrapping, prefixing, or reformatting it would mangle the user's
+ * carefully chosen prompt and change the result they get from their AI.
+ *
+ * This function is kept (rather than inlined) deliberately: it's the named
+ * contract point that says "this is the step where the chosen prompt goes
+ * through untouched." If a future change ever needs to transform the
+ * finalize-stage prompt, this is the single place to do it.
+ */
 export function buildFinalizePrompt(chosenPrompt: string): string {
   return chosenPrompt;
 }

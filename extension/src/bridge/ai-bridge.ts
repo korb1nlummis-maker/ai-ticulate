@@ -5,11 +5,20 @@ export type AIBridgeOptions = {
   pollIntervalMs: number;
   /** Max time to wait for a response to complete, in ms. */
   timeoutMs: number;
+  /**
+   * How long the adapter may continuously report `isResponseComplete() === true`
+   * while still producing no new readable text before we give up early. This
+   * catches the "the AI finished but the page shows nothing we can read" case
+   * (bad selector, empty turn, error bubble) instead of waiting the full
+   * `timeoutMs` and reporting a misleading "timed out".
+   */
+  emptyResponseGraceMs: number;
 };
 
 const DEFAULT_OPTIONS: AIBridgeOptions = {
   pollIntervalMs: 400,
   timeoutMs: 120_000,
+  emptyResponseGraceMs: 8_000,
 };
 
 /**
@@ -42,6 +51,10 @@ export class AIBridge {
     this.adapter.clickSend();
 
     const startedAt = Date.now();
+    // Timestamp of the first poll where the adapter reported complete but had
+    // no new readable text. Reset to null whenever that condition isn't met,
+    // so only a *continuous* window of complete-but-empty triggers early exit.
+    let completeButEmptySince: number | null = null;
     return new Promise<string>((resolve, reject) => {
       const poll = (): void => {
         if (Date.now() - startedAt > this.options.timeoutMs) {
@@ -51,9 +64,23 @@ export class AIBridge {
         if (this.adapter.isResponseComplete()) {
           const responseText = this.adapter.getLatestResponseText();
           if (responseText.length > 0 && responseText !== baseline) {
+            // Happy path: complete with fresh, readable text.
             resolve(responseText);
             return;
           }
+          // Complete, but nothing new/readable yet. Start (or continue) the
+          // grace timer; if this state persists, the AI almost certainly
+          // finished but produced nothing we can read.
+          completeButEmptySince ??= Date.now();
+          if (Date.now() - completeButEmptySince > this.options.emptyResponseGraceMs) {
+            reject(
+              new Error('AIBridge: the AI finished but produced no readable response'),
+            );
+            return;
+          }
+        } else {
+          // Still generating — clear the grace timer.
+          completeButEmptySince = null;
         }
         setTimeout(poll, this.options.pollIntervalMs);
       };
