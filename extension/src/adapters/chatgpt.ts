@@ -1,4 +1,5 @@
 import { AdapterDiagnostics, SiteAdapter } from './types.js';
+import { findLatestMessageTextStructurally } from './dom-utils.js';
 
 /**
  * Adapter for chatgpt.com. Uses resilient heuristics: prefers stable
@@ -152,10 +153,12 @@ export class ChatGPTAdapter implements SiteAdapter {
       const messages = document.querySelectorAll<HTMLElement>(sel);
       if (messages.length > 0) {
         const last = messages[messages.length - 1];
-        return last?.textContent?.trim() ?? '';
+        const text = (last?.textContent ?? '').trim();
+        if (text.length > 0) return text;
       }
     }
-    return '';
+    // Structural fallback — selectors didn't match the live DOM.
+    return findLatestMessageTextStructurally();
   }
 
   isResponseComplete(): boolean {
@@ -188,6 +191,35 @@ export class ChatGPTAdapter implements SiteAdapter {
         ? 'responseContainer: found'
         : 'responseContainer: NOT FOUND (cannot read AI replies)',
     );
+    if (!responseEl) {
+      // Dump DOM intelligence so the real response selector can be identified.
+      const testIds = Array.from(
+        new Set(
+          Array.from(document.querySelectorAll('[data-testid]'))
+            .map((e) => e.getAttribute('data-testid'))
+            .filter((v): v is string => v !== null),
+        ),
+      );
+      notes.push(
+        `data-testid values on page (${testIds.length}): ${testIds.slice(0, 50).join(', ')}`,
+      );
+
+      const main = document.querySelector('main') ?? document.body;
+      const blocks = Array.from(main.querySelectorAll<HTMLElement>('*'))
+        .filter((e) => {
+          const t = (e.textContent ?? '').trim();
+          return t.length > 40 && !e.closest('#ai-ticulate-root');
+        })
+        .slice(-10)
+        .map((e) => {
+          const cls = (e.getAttribute('class') ?? '').slice(0, 80);
+          const tid = e.getAttribute('data-testid') ?? '';
+          const snippet = (e.textContent ?? '').trim().slice(0, 50).replace(/\s+/g, ' ');
+          return `<${e.tagName.toLowerCase()} class="${cls}" data-testid="${tid}"> "${snippet}"`;
+        });
+      notes.push(`last 10 substantial text blocks in <main>:`);
+      for (const b of blocks) notes.push(`  ${b}`);
+    }
     return {
       site: this.name,
       inputFound: input !== null,

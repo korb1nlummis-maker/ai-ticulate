@@ -50,6 +50,12 @@ export class AIBridge {
     this.adapter.setInputValue(text);
     this.adapter.clickSend();
 
+    // Remember what we sent so we never resolve with our own prompt echoed
+    // back. The structural response-reading fallback can, on the first poll
+    // right after sending, briefly return the meta-prompt we just typed (it's
+    // the last "message-like" block until the assistant's turn renders).
+    const sentText = text;
+
     const startedAt = Date.now();
     // Timestamp of the first poll where the adapter reported complete but had
     // no new readable text. Reset to null whenever that condition isn't met,
@@ -63,7 +69,11 @@ export class AIBridge {
         }
         if (this.adapter.isResponseComplete()) {
           const responseText = this.adapter.getLatestResponseText();
-          if (responseText.length > 0 && responseText !== baseline) {
+          if (
+            responseText.length > 0 &&
+            responseText !== baseline &&
+            !this.looksLikeEcho(responseText, sentText)
+          ) {
             // Happy path: complete with fresh, readable text.
             resolve(responseText);
             return;
@@ -87,6 +97,21 @@ export class AIBridge {
       // Give the site a tick to register the send before the first poll.
       setTimeout(poll, this.options.pollIntervalMs);
     });
+  }
+
+  /**
+   * True if `candidate` is essentially just our own sent prompt echoed back —
+   * which the structural response-reading fallback can briefly pick up before
+   * the assistant's turn renders. We must not resolve with that.
+   */
+  private looksLikeEcho(candidate: string, sent: string): boolean {
+    const norm = (s: string): string => s.trim().replace(/\s+/g, ' ');
+    const c = norm(candidate);
+    const s = norm(sent);
+    if (c === s) return true;
+    // candidate is basically just our sent prompt echoed back
+    const head = s.slice(0, 60);
+    return head.length > 0 && c.startsWith(head);
   }
 
   /** Diagnostic report from the underlying adapter — for debugging live failures. */

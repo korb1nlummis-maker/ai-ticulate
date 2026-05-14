@@ -44,6 +44,27 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     await expect(promise).rejects.toThrow(/no readable response/i);
   });
 
+  it('does not resolve with our own sent prompt echoed back', async () => {
+    const adapter = new FakeAdapter();
+    const bridge = new AIBridge(adapter, {
+      pollIntervalMs: 5,
+      timeoutMs: 5000,
+      emptyResponseGraceMs: 40,
+    });
+
+    const promise = bridge.sendAndAwaitResponse('please summarise this meeting note');
+    // The "page" briefly shows our own sent prompt as the latest block.
+    setTimeout(
+      () =>
+        adapter.scriptResponse('please summarise this meeting note', { complete: true }),
+      10,
+    );
+
+    // The echo must NOT resolve the promise — it falls through to the
+    // empty-response-grace path instead.
+    await expect(promise).rejects.toThrow(/no readable response/i);
+  });
+
   it('does not resolve with a stale prior response left in the DOM', async () => {
     const adapter = new FakeAdapter();
     // Simulate a previous completed turn still visible in the DOM.
