@@ -32,7 +32,7 @@ describeLive('e2e smoke', () => {
       }),
     });
     expect(ptRes.status).toBe(200);
-    const ptBody = await ptRes.json();
+    const ptBody = (await ptRes.json()) as { question: string; chips: string[] };
     expect(typeof ptBody.question).toBe('string');
     expect(Array.isArray(ptBody.chips)).toBe(true);
 
@@ -51,7 +51,7 @@ describeLive('e2e smoke', () => {
       }),
     });
     expect(vRes.status).toBe(200);
-    const vBody = await vRes.json();
+    const vBody = (await vRes.json()) as { variants: { text: string }[] };
     expect(vBody.variants).toHaveLength(5);
 
     // Sanity-check: at least one variant references something specific from context

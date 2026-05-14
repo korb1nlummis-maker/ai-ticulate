@@ -23,7 +23,7 @@ describe('POST /pretalk/next', () => {
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as { question: string; chips: string[] };
     expect(body.question).toBe('What kind of email?');
     expect(body.chips).toEqual(['work', 'personal']);
   });
@@ -38,7 +38,7 @@ describe('POST /pretalk/next', () => {
     });
 
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string; details: unknown };
     expect(body.error).toBe('invalid_request');
     expect(Array.isArray(body.details)).toBe(true);
   });
@@ -58,7 +58,7 @@ describe('POST /pretalk/next', () => {
     });
 
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string; message: string };
     expect(body.error).toBe('internal_error');
     // Do NOT leak underlying exception details to the client.
     expect(body.message).not.toContain('no canned response');

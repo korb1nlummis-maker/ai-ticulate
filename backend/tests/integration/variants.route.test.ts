@@ -26,7 +26,7 @@ describe('POST /variants/generate', () => {
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as { variants: unknown[] };
     expect(body.variants).toHaveLength(5);
   });
 
@@ -38,7 +38,7 @@ describe('POST /variants/generate', () => {
       body: JSON.stringify({ originalPrompt: '' }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(body.error).toBe('invalid_request');
   });
 
@@ -54,7 +54,7 @@ describe('POST /variants/generate', () => {
       }),
     });
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string; message: string };
     expect(body.error).toBe('internal_error');
     expect(body.message).not.toContain('no canned response');
   });

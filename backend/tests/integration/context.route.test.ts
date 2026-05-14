@@ -19,7 +19,7 @@ describe('POST /context/summarize', () => {
     });
 
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as { topic: string; inferredUserRole: string };
     expect(body.topic).toBe('ad campaign');
     expect(body.inferredUserRole).toBe('marketing manager');
   });
@@ -32,7 +32,7 @@ describe('POST /context/summarize', () => {
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(body.error).toBe('invalid_request');
   });
 
@@ -44,7 +44,7 @@ describe('POST /context/summarize', () => {
       body: JSON.stringify({ chatHistory: 'x'.repeat(100_001) }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string };
     expect(body.error).toBe('invalid_request');
   });
 
@@ -56,7 +56,7 @@ describe('POST /context/summarize', () => {
       body: JSON.stringify({ chatHistory: 'unmatched chat content here' }),
     });
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = (await res.json()) as { error: string; message: string };
     expect(body.error).toBe('internal_error');
     expect(body.message).not.toContain('no canned response');
   });
