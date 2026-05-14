@@ -247,3 +247,15 @@ Commit: `3a9293e`
 Test counts: 38 passing + 3 skipped (live tests env-gated).
 
 Commit: `991416c`
+
+### Backend Task 9 complete — Pino logger + centralized error middleware
+
+- `backend/src/logger.ts` exports a configured Pino instance. Dev mode uses `pino-pretty` (colorized, readable). Prod mode emits structured JSON for log aggregators.
+- `app.onError` now logs via `logger.error(...)` with `{err, stack, path, method}` structured fields instead of `console.error`. Internal exception details stay in logs only — client response is always the generic `{error: 'internal_error', message: 'Something went wrong.'}` 500 envelope. **This is where we draw the line on never leaking stack traces to users.**
+- Added `app.notFound` returning clean `{error: 'not_found'}` JSON 404. Previously unknown routes got Hono's default text response.
+- Entry-point startup also uses `logger.info({ port }, 'server listening')` for consistency.
+- 3 new tests in `error-handling.test.ts` confirm: 400 on invalid body, 500 generic envelope without leaking underlying error text, 404 JSON on unknown routes.
+
+Test counts: 41 passing + 3 skipped (live).
+
+Commit: `70ac813`
