@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Claude</title>
+  </head>
+  <body>
+    <div id="root">
+      <main>
+        <div class="conversation">
+          <div data-testid="user-message">
+            <div class="message-content">first user message</div>
+          </div>
+          <div data-testid="assistant-message" class="font-claude-message">
+            <div class="message-content">
+              <p>first assistant message</p>
+            </div>
+          </div>
+          <div data-testid="user-message">
+            <div class="message-content">second user message</div>
+          </div>
+          <div data-testid="assistant-message" class="font-claude-message">
+            <div class="message-content">
+              <p>second assistant message</p>
+            </div>
+          </div>
+        </div>
+        <fieldset class="composer">
+          <div
+            contenteditable="true"
+            aria-label="Write your prompt to Claude"
+            class="ProseMirror"
+            role="textbox"
+          ></div>
+          <button aria-label="Send message" type="button">Send</button>
+        </fieldset>
+      </main>
+    </div>
+  </body>
+</html>
