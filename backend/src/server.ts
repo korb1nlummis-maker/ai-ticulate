@@ -8,20 +8,26 @@ import { contextRoute } from './routes/context.js';
 import { loadConfig } from './config.js';
 import { AnthropicLLM } from './llm/anthropic.js';
 import { LLMClient } from './llm/types.js';
+import { logger } from './logger.js';
 
 export function createApp(llm: LLMClient): Hono {
   const app = new Hono();
 
   app.onError((err, c) => {
-    // Task 9 will replace this with proper structured logging.
-    console.error('[unhandled error]', err);
+    logger.error(
+      { err: err.message, stack: err.stack, path: c.req.path, method: c.req.method },
+      'request error',
+    );
     return c.json({ error: 'internal_error', message: 'Something went wrong.' }, 500);
   });
+
+  app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
   app.route('/', healthRoute);
   app.route('/', pretalkRoute(llm));
   app.route('/', variantsRoute(llm));
   app.route('/', contextRoute(llm));
+
   return app;
 }
 
@@ -31,6 +37,6 @@ if (entryPath && import.meta.url === pathToFileURL(entryPath).href) {
   const llm = new AnthropicLLM(cfg.anthropicApiKey, cfg.anthropicModel);
   const app = createApp(llm);
   serve({ fetch: app.fetch, port: cfg.port }, ({ port }) => {
-    console.log(`Listening on http://localhost:${port}`);
+    logger.info({ port }, 'server listening');
   });
 }
