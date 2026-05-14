@@ -10,6 +10,42 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-14 — Backend Foundation execution wrap
+
+### Backend Task 10 complete — E2E smoke test
+
+- Added `backend/tests/integration/e2e.smoke.test.ts`. Chains all three endpoints in one flow: `/context/summarize` → `/pretalk/next` → `/variants/generate`, passing each step's output into the next, the way the real extension will.
+- Env-gated like the other live tests — skipped without `ANTHROPIC_API_KEY`. Asserts structural validity at each step plus a sanity check that the final variants reference something specific from the seeded context (bakery / Instagram / content / engagement).
+- Skipped on this run (no API key in environment).
+
+### Backend Plan 1 COMPLETE — Foundation shipped
+
+All 10 tasks of Plan 1 (Backend Foundation) are done. The backend now provides three working LLM-powered endpoints:
+- `POST /context/summarize` — raw chat history → structured context summary
+- `POST /pretalk/next` — vague prompt + context + Q&A history → next clarifying question + predicted chips
+- `POST /variants/generate` — refined prompt + context + Q&A → exactly 5 detailed variants with fill-in blanks
+
+**Stack landed:** Node 24 + TypeScript (ESM, strict, noUncheckedIndexedAccess) + Hono + Vitest + Anthropic SDK + Zod + Pino. pnpm. ~45 commits on `feat/plan-1-backend-foundation`.
+
+**Architecture as built:**
+- Thin extension / smart backend — all LLM calls server-side.
+- `LLMClient` interface with `AnthropicLLM` (Claude Haiku 4.5) + `StubLLM` (tests). Model configurable via `ANTHROPIC_MODEL` env.
+- Three-layer pattern per endpoint: route (Hono + Zod validation) → service (stateless `runXxx(llm, input)`) → LLM client. Shared `QATurn`/`formatQaHistory` in `services/shared.ts`.
+- File-based prompt templates with YAML-lite frontmatter in `backend/prompts/`, loaded + cached + `{{var}}`-rendered by `prompts/loader.ts`. CRLF-safe.
+- `createApp(llm)` factory — no module-level singleton; tests inject `StubLLM`.
+- Centralized `app.onError` (structured Pino logging, generic client envelope, no stack-trace leakage) + JSON `app.notFound`.
+
+**Tests:** 41 passing + 4 skipped. Unit tests use `StubLLM` (fast, deterministic). Route-integration tests cover 200/400/500 paths per endpoint. Live tests + e2e smoke test are env-gated on `ANTHROPIC_API_KEY` — they run in dev/CI-with-secret, skip gracefully otherwise.
+
+**Deferred (intentionally, to later plans):**
+- Auth, accounts, rate limiting, billing, BYO API key, adaptation tracking → Plan 2.
+- Golden eval set + LLM-as-judge + CI prompt-regression gate → Plan 3.
+- Browser extension + site adapters → Plan 4.
+
+**Outstanding manual verification:** The live tests and e2e smoke test have never actually run against the real Anthropic API in this session (no `ANTHROPIC_API_KEY` available). Before relying on the backend, set `ANTHROPIC_API_KEY` in `backend/.env` and run `pnpm test` — all 4 env-gated tests should go green. Then `pnpm dev` + curl the three endpoints to eyeball real output quality.
+
+**Next:** Plan 1 ready for final review + merge to `main`. Then Plan 2 (Backend Production).
+
 ## 2026-05-13 — Session 1: brainstorm → approved design
 
 ### Project conceived
