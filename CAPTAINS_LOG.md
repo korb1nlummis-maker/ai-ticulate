@@ -81,6 +81,20 @@ Commit: 63b0e2a
 
 ---
 
+### Live-test fix #5 — reliable send + diagnostics on every error
+
+Live test #5 (claude.ai): the meta-prompt text landed in Claude's box but the message DIDN'T send — Enter-key send is flaky (worked on a prior test, not this one). Root cause: the bridge called `setInputValue` then `clickSend` synchronously back-to-back, racing Claude's contenteditable editor before it had processed the input. Also: the error panel showed no "Copy diagnostics" button, because the `unknown`-parse error path didn't attach diagnostics (only thrown-error catches did).
+
+**Fixes:**
+1. **Reliable send.** The bridge now pauses (~350ms, configurable) between `setInputValue` and `clickSend` so the editor is ready. And `clickSend` now dispatches Enter AND clicks a confidently-identified send button (aria-label actually contains "send") — both mechanisms, for reliability; the site won't send an empty message so the second is a safe no-op.
+2. **Diagnostics everywhere.** The `unknown`-parse error path now also produces the full diagnostics block — including the raw text the extension actually read off the page. That raw text is the smoking gun: it shows whether the extension read page-chrome junk (send didn't work) or Claude's real response (Claude ignored the format markers).
+
+71 tests passing.
+
+Commit: ceb9414
+
+---
+
 ## 2026-05-14 — Extension merged to main; v1 built
 
 ### feat/extension merged to main
