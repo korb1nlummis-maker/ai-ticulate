@@ -113,6 +113,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - Scoped `.ait-` CSS class prefix so panel styles never clash with the host page.
 - Commit: 84bc3e9
 
+### Extension Task 12 complete — Content script integration
+
+- `AppController` owns the panel view state + wraps the orchestrator. Maps each `ParsedResponse` to the next `PanelView`; catches errors into a calm, actionable error view (graceful degradation, never a broken page or leaked internals).
+- `mountApp()` renders `<Panel>` + `<Launcher>` and re-renders on controller state changes.
+- Content script entrypoint: picks the adapter for the host, builds the bridge, mounts the app. **Milestone: the extension is functionally complete end-to-end** — `pnpm build` produces a loadable unpacked extension.
+- Commit: 48582a2
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
