@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Gemini</title>
+  </head>
+  <body>
+    <div id="app-root">
+      <main>
+        <div class="conversation-container">
+          <div class="user-query-container">
+            <span>first user message</span>
+          </div>
+          <model-response>
+            <message-content class="model-response-text">
+              <p>first assistant message</p>
+            </message-content>
+          </model-response>
+          <div class="user-query-container">
+            <span>second user message</span>
+          </div>
+          <model-response>
+            <message-content class="model-response-text">
+              <p>second assistant message</p>
+            </message-content>
+          </model-response>
+        </div>
+        <div class="input-area">
+          <rich-textarea>
+            <div
+              contenteditable="true"
+              aria-label="Enter a prompt here"
+              role="textbox"
+            ></div>
+          </rich-textarea>
+          <button aria-label="Send message" type="button">Send</button>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
