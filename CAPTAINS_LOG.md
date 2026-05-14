@@ -10,6 +10,22 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-14 — Extension merged to main; v1 built
+
+### feat/extension merged to main
+
+All 13 extension tasks + the final-review fixes are merged to `main` (tests verified green on the merged result: 57 passing). The `feat/extension` branch is deleted; `origin/main` is up to date.
+
+Added a repo-root `README.md` (previously only `extension/README.md` existed) — explains the product, the zero-infrastructure architecture, the repo layout, quick start, and the one human-needed step (live-site adapter verification).
+
+**Project state:** ai-ticulate v1 is built. It is a complete, working Manifest V3 browser extension with a fully unit/integration-tested engine + UI. The single remaining pre-release step — verifying the three site adapters against the live chatgpt.com / claude.ai / gemini.google.com DOM — genuinely requires a human in a browser and cannot be done headless. That is the honest finish line of the planned scope.
+
+### Working preference recorded
+
+User asked to operate autonomously and not gate on permission for routine decisions (merge, next task, obvious menu option). Recorded in memory ([[autonomous-execution]]). Routine calls are now made directly; genuine product-direction forks and irreversible/destructive actions still surface for a decision.
+
+---
+
 ## 2026-05-14 — ARCHITECTURE PIVOT: pure browser extension
 
 ### The pivot — no backend, no API keys, no accounts, free
