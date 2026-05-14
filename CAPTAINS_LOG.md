@@ -47,6 +47,14 @@ The project owner course-corrected the architecture, hard and clearly:
 - `pickAdapter(hostname)` registry. Stub ChatGPT/Claude/Gemini adapters created (real DOM logic lands in Tasks 3-5).
 - Commit: efbf037
 
+### Extension Task 3 complete — ChatGPT adapter
+
+- `ChatGPTAdapter` implemented with resilient heuristics: tries stable attributes (`#prompt-textarea`, `data-testid`, `aria-label`, `data-message-author-role`) with fallback chains, never brittle generated class names.
+- Shared `loadFixture` test helper installs HTML fixtures into the test document via `DOMParser` + `importNode` (no innerHTML — safe and explicit).
+- Tested against a representative frozen HTML fixture.
+- **Manual live verification still required:** the fixture is a best-effort representation; the adapter must be confirmed against the real chatgpt.com once before release. Tracked as a pre-release checklist item.
+- Commit: 689b158
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
