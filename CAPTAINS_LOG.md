@@ -39,6 +39,19 @@ Applied to all three adapters. 60 tests passing.
 
 Commit: 4181420
 
+### Live-test fix #2 — robust input/send + self-diagnostics
+
+Second live test (claude.ai): same symptom — meta-prompt text lands in Claude's box but the message doesn't send, panel shows the generic error. Fix #1 (execCommand) wasn't enough, and crucially we can't tell WHICH step fails because we're guessing all three sites' selectors blind.
+
+**Changes:**
+1. `setInputValue` now tries three insertion strategies in order (execCommand insertText → beforeinput event with data → direct textContent), verifying the text landed after each. Covers editors where any one strategy fails.
+2. `clickSend` now uses a plain Enter keypress as the primary send mechanism — what a real user does, reliable across all three sites — instead of hunting for a send button that may be the wrong element or inert. Button is a fallback only when no input handle exists.
+3. **Self-diagnostics.** New `SiteAdapter.diagnose()` reports what the adapter actually finds on the live page (input? send button? response container?). On any failure, `AppController` logs the diagnostics to the console AND shows a compact `[diagnostic] input:✓ send:✗ response-area:✗` line in the error panel. This turns a live-test failure screenshot into a precise diagnosis instead of blind selector-guessing.
+
+66 tests passing.
+
+Commit: 9477504
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
