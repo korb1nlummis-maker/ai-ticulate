@@ -71,6 +71,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - **Milestone: all three site adapters (ChatGPT, Claude, Gemini) are complete.** All need manual live-site verification before release (pre-release checklist).
 - Commit: a8f02f4
 
+### Extension Task 6 complete — AI bridge
+
+- `AIBridge.sendAndAwaitResponse(text)` — the technical heartbeat. Sets the input, sends, polls `isResponseComplete()` until done (or timeout), returns the response text.
+- Completion detection: poll-based, driven by the adapter's `isResponseComplete()` (which checks for the site's stop-generating control). Configurable poll interval + timeout; defaults 400ms / 120s.
+- Fully tested against `FakeAdapter` — deterministic, no real browser needed: happy path, timeout, adapter-not-ready.
+- Commit: 9d3c5c6
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
