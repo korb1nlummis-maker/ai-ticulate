@@ -24,6 +24,14 @@ Added a repo-root `README.md` (previously only `extension/README.md` existed) �
 
 User asked to operate autonomously and not gate on permission for routine decisions (merge, next task, obvious menu option). Recorded in memory ([[autonomous-execution]]). Routine calls are now made directly; genuine product-direction forks and irreversible/destructive actions still surface for a decision.
 
+### Polish — extension icons + manifest
+
+- Added the ai-ticulate icon set (sparkle ✨ on a rounded-square background) — generated at the standard sizes (16/32/48/128) and wired into the manifest. Recognizable at 16px.
+- Approach: hand-authored `assets/icon.svg` (indigo→violet gradient rounded square, white four-pointed sparkle + smaller accent star), rasterized to `assets/icon.png` (512x512) via a one-off `sharp` script (`scripts/generate-icon.mjs`), then the `@wxt-dev/auto-icons` WXT module generates the four manifest sizes from that PNG at build time. sharp's native build needed `sharp: true` added to `extension/pnpm-workspace.yaml` `allowBuilds`.
+- Manifest metadata reviewed: name, description, minimal `storage` permission, host permissions scoped to the 3 AI sites only.
+- Verified: `pnpm build` produces a manifest with a populated `icons` field (16/32/48/128 → `icons/*.png`) and the icon files exist in the build output at correct dimensions. 57 tests still pass, typecheck clean.
+- Commit: 75e0f5261e2c06cd71f7dff11c374d03aa4d5c6a
+
 ---
 
 ## 2026-05-14 — ARCHITECTURE PIVOT: pure browser extension
