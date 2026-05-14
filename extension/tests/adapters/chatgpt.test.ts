@@ -16,9 +16,9 @@ describe('ChatGPTAdapter', () => {
     expect(new ChatGPTAdapter().isReady()).toBe(false);
   });
 
-  it('setInputValue writes into the input element', () => {
+  it('setInputValue writes into the input element', async () => {
     const a = new ChatGPTAdapter();
-    a.setInputValue('hello from ai-ticulate');
+    await a.setInputValue('hello from ai-ticulate');
     const input = document.querySelector('#prompt-textarea') as HTMLTextAreaElement | null;
     expect(input?.value ?? input?.textContent ?? '').toContain('hello from ai-ticulate');
   });

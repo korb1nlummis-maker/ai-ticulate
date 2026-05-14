@@ -8,23 +8,23 @@ describe('FakeAdapter', () => {
     expect(a.name).toBe('Fake');
   });
 
-  it('stores the input value that was set', () => {
+  it('stores the input value that was set', async () => {
     const a = new FakeAdapter();
-    a.setInputValue('hello world');
+    await a.setInputValue('hello world');
     expect(a.inputValue).toBe('hello world');
   });
 
-  it('on clickSend, queues the input as a sent message and clears the input', () => {
+  it('on clickSend, queues the input as a sent message and clears the input', async () => {
     const a = new FakeAdapter();
-    a.setInputValue('a question');
+    await a.setInputValue('a question');
     a.clickSend();
     expect(a.inputValue).toBe('');
     expect(a.sentMessages).toEqual(['a question']);
   });
 
-  it('lets a test script the next response and its completion', () => {
+  it('lets a test script the next response and its completion', async () => {
     const a = new FakeAdapter();
-    a.setInputValue('q');
+    await a.setInputValue('q');
     a.clickSend();
     expect(a.isResponseComplete()).toBe(false);
     a.scriptResponse('the answer', { complete: true });

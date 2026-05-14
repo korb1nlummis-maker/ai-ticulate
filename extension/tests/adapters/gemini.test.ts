@@ -16,9 +16,9 @@ describe('GeminiAdapter', () => {
     expect(new GeminiAdapter().isReady()).toBe(false);
   });
 
-  it('setInputValue writes into the input element', () => {
+  it('setInputValue writes into the input element', async () => {
     const a = new GeminiAdapter();
-    a.setInputValue('hello from ai-ticulate');
+    await a.setInputValue('hello from ai-ticulate');
     const input = document.querySelector('[contenteditable="true"]');
     expect(input?.textContent ?? '').toContain('hello from ai-ticulate');
   });

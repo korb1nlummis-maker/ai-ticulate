@@ -83,11 +83,11 @@ describe('findLatestMessageTextStructurally', () => {
 });
 
 describe('insertTextIntoEditable', () => {
-  it('lands text into a contenteditable element', () => {
+  it('lands text into a contenteditable element', async () => {
     const div = document.createElement('div');
     div.setAttribute('contenteditable', 'true');
     document.body.replaceChildren(div);
-    const ok = insertTextIntoEditable(div, 'hello world');
+    const ok = await insertTextIntoEditable(div, 'hello world');
     expect(ok).toBe(true);
     expect(div.textContent ?? '').toContain('hello world');
   });

@@ -91,66 +91,55 @@ export function looksLikeNonSendButton(btn: Element): boolean {
 }
 
 /**
- * Insert text into a contenteditable editor (ProseMirror / TipTap on Claude,
- * etc.) as robustly as possible. These editors run a MutationObserver that
- * reverts naive `textContent` changes, so we must go through the editor's real
- * input pipeline. `execCommand('insertText')` triggers a genuine beforeinput
- * event with the browser's default action, which the editor's observer picks
- * up — this is the method that has actually worked against live Claude. A
- * `beforeinput` event and a `textContent` set are last-resort fallbacks.
+ * Insert text into a contenteditable editor (TipTap/ProseMirror on Claude, etc.)
+ * as reliably as possible. `execCommand('insertText')` is the correct method —
+ * it fires a trusted `beforeinput` the editor processes through its real
+ * pipeline — but it is flaky: if the editor isn't fully focus-settled it
+ * silently no-ops. So we focus, let focus settle, try execCommand, verify the
+ * text actually landed in the DOM, and RETRY up to a handful of times.
  *
- * NOTE: synthetic `paste` events were tried and removed — a constructed
- * ClipboardEvent cannot carry clipboard data (browsers null `clipboardData`
- * on untrusted events), so the editor's paste handler receives nothing, and
- * running it first left the editor in a state where execCommand stopped
- * working. Do not reintroduce a synthetic-paste strategy.
+ * Async because the retries need real time between attempts for focus/render
+ * to settle. Returns true if the text appears to have landed.
  *
- * Returns true if the text appears to have landed.
+ * Do NOT reintroduce a synthetic-paste strategy — a constructed ClipboardEvent
+ * cannot carry clipboard data and it breaks the subsequent execCommand.
  */
-export function insertTextIntoEditable(el: HTMLElement, text: string): boolean {
-  el.focus();
-  const selectAll = (): void => {
-    const sel = window.getSelection();
-    if (!sel) return;
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    sel.removeAllRanges();
-    sel.addRange(range);
-  };
+export async function insertTextIntoEditable(el: HTMLElement, text: string): Promise<boolean> {
   const landed = (): boolean => (el.textContent ?? '').includes(text);
+  const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+  const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-  // Strategy 1: execCommand insertText — the proven method against live Claude.
-  try {
-    selectAll();
-    document.execCommand('insertText', false, text);
-  } catch {
-    /* not supported here (e.g. the test DOM) */
-  }
+  const MAX_ATTEMPTS = 6;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    el.focus();
+    await tick(); // let focus + the editor's own cursor placement settle
 
-  // Strategy 2: beforeinput carrying the data.
-  if (!landed()) {
+    let execSupported = true;
     try {
-      selectAll();
-      el.dispatchEvent(
-        new InputEvent('beforeinput', {
-          bubbles: true,
-          cancelable: true,
-          inputType: 'insertText',
-          data: text,
-        }),
-      );
+      document.execCommand('insertText', false, text);
     } catch {
-      /* ignore */
+      execSupported = false; // e.g. the happy-dom test environment
     }
+    if (!execSupported) break; // no point retrying where execCommand doesn't exist
+
+    await tick(); // let the editor process the beforeinput + DOM mutation
+    if (landed()) {
+      el.dispatchEvent(
+        new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
+      );
+      return true;
+    }
+    await pause(120); // brief settle before the next attempt
   }
 
-  // Strategy 3: last resort — direct textContent (the editor may revert this).
-  if (!landed()) {
-    el.textContent = text;
-  }
-
+  // Fallback: direct textContent. TipTap/ProseMirror may revert this via its
+  // MutationObserver, but it's the last resort and worth a final shot
+  // (and it's what makes this function work in the test DOM).
+  el.focus();
+  el.textContent = text;
   el.dispatchEvent(
     new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
   );
+  await tick();
   return landed();
 }

@@ -57,7 +57,7 @@ export class ClaudeAdapter implements SiteAdapter {
     return this.findInput() !== null && this.findSendButton() !== null;
   }
 
-  setInputValue(text: string): void {
+  async setInputValue(text: string): Promise<void> {
     const input = this.findInput();
     if (!input) throw new Error('ClaudeAdapter: input not found');
 
@@ -67,7 +67,7 @@ export class ClaudeAdapter implements SiteAdapter {
       return;
     }
 
-    const landed = insertTextIntoEditable(input, text);
+    const landed = await insertTextIntoEditable(input, text);
     if (!landed) {
       throw new Error('ClaudeAdapter: could not type text into the input editor');
     }

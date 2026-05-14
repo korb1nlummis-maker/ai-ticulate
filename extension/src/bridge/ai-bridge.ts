@@ -59,7 +59,7 @@ export class AIBridge {
     // resolve with the stale previous response.
     const baseline = this.adapter.getLatestResponseText();
 
-    this.adapter.setInputValue(text);
+    await this.adapter.setInputValue(text);
     // Give the editor a beat to process the injected input before we send;
     // otherwise the Enter keypress / send click can race an editor the site
     // still thinks is empty, and the message silently never sends.

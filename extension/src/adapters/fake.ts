@@ -21,7 +21,7 @@ export class FakeAdapter implements SiteAdapter {
     return this.ready;
   }
 
-  setInputValue(text: string): void {
+  async setInputValue(text: string): Promise<void> {
     this.inputValue = text;
   }
 

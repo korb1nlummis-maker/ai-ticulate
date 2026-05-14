@@ -23,8 +23,12 @@ export interface SiteAdapter {
   /** True if the adapter's required elements are present and the page looks ready. */
   isReady(): boolean;
 
-  /** Set the chat input box's value to the given text. */
-  setInputValue(text: string): void;
+  /**
+   * Set the chat input box's value to the given text. Async because typing
+   * into a contenteditable editor may need retries with real time between
+   * attempts for focus/render to settle.
+   */
+  setInputValue(text: string): Promise<void>;
 
   /** Trigger sending the current input (click send / press enter as appropriate). */
   clickSend(): void;

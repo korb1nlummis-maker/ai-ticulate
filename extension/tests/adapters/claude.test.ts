@@ -16,9 +16,9 @@ describe('ClaudeAdapter', () => {
     expect(new ClaudeAdapter().isReady()).toBe(false);
   });
 
-  it('setInputValue writes into the input element', () => {
+  it('setInputValue writes into the input element', async () => {
     const a = new ClaudeAdapter();
-    a.setInputValue('hello from ai-ticulate');
+    await a.setInputValue('hello from ai-ticulate');
     const input = document.querySelector('[contenteditable="true"]');
     expect(input?.textContent ?? '').toContain('hello from ai-ticulate');
   });
