@@ -93,6 +93,12 @@ The project owner course-corrected the architecture, hard and clearly:
 - `unknown` kind is the graceful-degradation path: if the AI didn't follow the format, the orchestrator can fall back to showing the raw text.
 - Commit: 78aeabe
 
+### Extension Task 9 complete — Task tracker
+
+- `TaskTracker` holds the evolving goal understanding: the goal summary (refinable as understanding improves) and the list of answered clarifying questions.
+- `snapshot()` feeds into meta-prompts so context compounds across turns.
+- Commit: 1e05271
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
