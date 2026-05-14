@@ -5,7 +5,7 @@ import { FakeAdapter } from '../../src/adapters/fake.js';
 describe('AIBridge.sendAndAwaitResponse', () => {
   it('sends the text and resolves with the completed response', async () => {
     const adapter = new FakeAdapter();
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1 });
 
     const promise = bridge.sendAndAwaitResponse('what is 2+2?');
     setTimeout(() => adapter.scriptResponse('thinking...', { complete: false }), 10);
@@ -18,14 +18,14 @@ describe('AIBridge.sendAndAwaitResponse', () => {
 
   it('rejects if the response never completes before the timeout', async () => {
     const adapter = new FakeAdapter();
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 50 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 50, sendDelayMs: 1 });
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/timed out/i);
   });
 
   it('rejects if the adapter is not ready', async () => {
     const adapter = new FakeAdapter();
     adapter.setReady(false);
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 100 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 100, sendDelayMs: 1 });
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/not ready/i);
   });
 
@@ -35,6 +35,7 @@ describe('AIBridge.sendAndAwaitResponse', () => {
       pollIntervalMs: 5,
       timeoutMs: 5000,
       emptyResponseGraceMs: 40,
+      sendDelayMs: 1,
     });
 
     const promise = bridge.sendAndAwaitResponse('q');
@@ -50,6 +51,7 @@ describe('AIBridge.sendAndAwaitResponse', () => {
       pollIntervalMs: 5,
       timeoutMs: 5000,
       emptyResponseGraceMs: 40,
+      sendDelayMs: 1,
     });
 
     const promise = bridge.sendAndAwaitResponse('please summarise this meeting note');
@@ -70,7 +72,7 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     // Simulate a previous completed turn still visible in the DOM.
     adapter.scriptResponse('OLD stale response', { complete: true });
 
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1 });
     const promise = bridge.sendAndAwaitResponse('a new question');
 
     // The new turn completes a bit later with fresh text.

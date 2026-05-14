@@ -126,15 +126,22 @@ export class GeminiAdapter implements SiteAdapter {
           } as KeyboardEventInit),
         );
       }
-      return;
     }
-    // No input handle — fall back to the send button if we can find one.
+    // Also click the send button if we can confidently identify one (its
+    // aria-label actually mentions "send"). Both mechanisms run for
+    // reliability — whichever works first sends; the site won't send an
+    // empty message, so a second no-op on an already-cleared editor is safe.
     const btn = this.findSendButton();
-    if (btn) {
+    if (
+      btn &&
+      !btn.disabled &&
+      (btn.getAttribute('aria-label') ?? '').toLowerCase().includes('send')
+    ) {
       btn.click();
-      return;
     }
-    throw new Error('GeminiAdapter: cannot send — no input or send button found');
+    if (!input && !btn) {
+      throw new Error('GeminiAdapter: cannot send — no input or send button found');
+    }
   }
 
   getLatestResponseText(): string {

@@ -75,9 +75,18 @@ export class AppController {
     if (parsed.kind === 'options') {
       return { kind: 'options', options: parsed.options };
     }
+    // parsed.kind === 'unknown'
+    const diag = this.bridge.diagnose();
+    const rawRead = parsed.raw ?? '';
+    const diagnostics =
+      formatDiagnosticsText(diag) +
+      '\n\n--- raw text the extension read from the page (first 1500 chars) ---\n' +
+      rawRead.slice(0, 1500);
+    console.log('[ai-ticulate] unknown-parse diagnostics:\n' + diagnostics);
     return {
       kind: 'error',
       message: "The AI's reply could not be read. Try again, or send your prompt as-is.",
+      diagnostics,
     };
   }
 

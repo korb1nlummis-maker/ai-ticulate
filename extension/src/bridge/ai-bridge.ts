@@ -13,13 +13,25 @@ export type AIBridgeOptions = {
    * `timeoutMs` and reporting a misleading "timed out".
    */
   emptyResponseGraceMs: number;
+  /**
+   * How long to pause between `setInputValue` and `clickSend`, in ms. The site's
+   * contenteditable editor needs a tick to process the injected input before it
+   * will honour a send — without this pause the Enter keypress can race an
+   * editor the site still thinks is empty, and the message never sends.
+   */
+  sendDelayMs: number;
 };
 
 const DEFAULT_OPTIONS: AIBridgeOptions = {
   pollIntervalMs: 400,
   timeoutMs: 120_000,
   emptyResponseGraceMs: 8_000,
+  sendDelayMs: 350,
 };
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * The AI bridge: the one core primitive the whole product is built on.
@@ -48,6 +60,10 @@ export class AIBridge {
     const baseline = this.adapter.getLatestResponseText();
 
     this.adapter.setInputValue(text);
+    // Give the editor a beat to process the injected input before we send;
+    // otherwise the Enter keypress / send click can race an editor the site
+    // still thinks is empty, and the message silently never sends.
+    await delay(this.options.sendDelayMs);
     this.adapter.clickSend();
 
     // Remember what we sent so we never resolve with our own prompt echoed
