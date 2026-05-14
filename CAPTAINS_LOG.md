@@ -119,6 +119,19 @@ Live test #6: the meta-prompt never got into Claude's input — the page stayed 
 
 Commit: 81d02e9
 
+### Live-test fix #8 — revert the paste regression, harden the send
+
+Live test #7: the meta-prompt stopped landing in Claude's input entirely. The diagnostic confirmed `findInput()` finds the CORRECT element (`<div data-testid="chat-input" class="tiptap ProseMirror" contenteditable>`), so the regression was in `insertTextIntoEditable`: fix #7 made a synthetic `paste` event the first strategy, but a constructed `ClipboardEvent` can't carry clipboard data (browsers null `clipboardData` on untrusted events) — and running it first left the editor in a state where the subsequent `execCommand` (the method that genuinely worked a few rounds back) stopped working.
+
+**Fixes:**
+1. **Reverted `insertTextIntoEditable` to execCommand-first**, dropped the synthetic-paste strategy entirely (with a comment so it's not reintroduced).
+2. **`setInputValue` now throws** a clear `"could not type text into the input editor"` error if insertion didn't land — an honest failure that triggers diagnostics, instead of silently sending nothing. `errorMessage()` maps it to a user-friendly message.
+3. **Hardened `clickSend`** — re-focuses the input, dispatches the full keydown/keypress/keyup Enter sequence with `shiftKey:false` explicit, plus the verified send-button click.
+
+74 tests passing.
+
+Commit: 991c807
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
