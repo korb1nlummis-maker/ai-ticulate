@@ -142,6 +142,14 @@ Live test #8: still no text landing in Claude's editor. The diagnostic confirms 
 
 Commit: 83d5430
 
+### Diagnostics expansion — full execution trace
+
+Per the user's request to make the diagnostic tracker catch all issues at once: added a module-level execution trace (`src/trace.ts`). The whole flow — AppController → Orchestrator → AIBridge → SiteAdapter — now records timestamped steps as it runs: focus, each text-insertion attempt and whether the text landed, the send dispatch, every Nth poll with its state, which response selector matched. The `AdapterDiagnostics` snapshot also gained: the input's current text, the active element, whether `execCommand('insertText')` is supported, `document.hasFocus()`, and a conversation-turn count. All of it is in the copyable "Copy diagnostics" output. One failure capture now shows exactly where and how the flow broke, instead of revealing one layer per round.
+
+79 tests passing.
+
+Commit: ed5ec31
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
