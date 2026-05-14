@@ -69,6 +69,18 @@ Commit: ced4110
 
 ---
 
+### Live-test fix #4 — copyable diagnostics
+
+Live test #4 (claude.ai): the structural response-reader from fix #3 still didn't match Claude's real DOM. We genuinely need to see Claude's structure — the `diagnose()` system already captures it, but it was only logged as a console object, which is fiddly for a non-technical user to expand + screenshot.
+
+**Change:** the failure diagnostics are now plain copyable text. The error panel renders the full diagnostic block (site, what was/wasn't found, the data-testid list, the last substantial text blocks) in a monospace box with a one-click **"Copy diagnostics"** button. Also logged to the console as a single multi-line string (screenshot-friendly) instead of a nested object. This turns "guess Claude's DOM again" into "user pastes the exact structure back" — the next response-reader fix can be surgical.
+
+71 tests passing.
+
+Commit: 63b0e2a
+
+---
+
 ## 2026-05-14 — Extension merged to main; v1 built
 
 ### feat/extension merged to main
