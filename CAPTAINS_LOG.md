@@ -106,6 +106,13 @@ The project owner course-corrected the architecture, hard and clearly:
 - Fully tested with `FakeAdapter` + `AIBridge` — the whole engine is verifiable without a real browser. **Milestone: the headless engine is complete.** Tasks 11-13 put a UI on it and wire it into the page.
 - Commit: 9877cbc
 
+### Extension Task 11 complete — Panel UI components
+
+- Presentational React components: `Launcher` (✨ button), `RequestInput`, `QuestionsView` (chips + free text), `OptionsView` (5 options, inline [___] fill-in inputs), `Panel` (container, switches on `view.kind`).
+- Components are pure props-in/callbacks-out — no orchestrator coupling. Task 12 wires them to the engine. All rendering via React — no HTML-string assignment anywhere.
+- Scoped `.ait-` CSS class prefix so panel styles never clash with the host page.
+- Commit: 84bc3e9
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
