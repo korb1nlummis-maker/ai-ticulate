@@ -55,6 +55,14 @@ The project owner course-corrected the architecture, hard and clearly:
 - **Manual live verification still required:** the fixture is a best-effort representation; the adapter must be confirmed against the real chatgpt.com once before release. Tracked as a pre-release checklist item.
 - Commit: 689b158
 
+### Extension Task 4 complete — Claude adapter
+
+- `ClaudeAdapter` implemented with resilient heuristics: `div.ProseMirror[contenteditable]`, `aria-label`, `data-testid="assistant-message"` with fallback chains.
+- Claude's input is contenteditable (not a textarea) — `setInputValue` writes `textContent` and dispatches an `input` event.
+- Tested against a representative frozen HTML fixture, reusing the `loadFixture` helper.
+- **Manual live verification still required** against the real claude.ai before release (pre-release checklist item).
+- Commit: a394a2c
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
