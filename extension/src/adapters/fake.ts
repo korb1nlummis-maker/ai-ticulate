@@ -28,8 +28,6 @@ export class FakeAdapter implements SiteAdapter {
   clickSend(): void {
     this.sentMessages.push(this.inputValue);
     this.inputValue = '';
-    this.responseText = '';
-    this.complete = false;
   }
 
   getLatestResponseText(): string {

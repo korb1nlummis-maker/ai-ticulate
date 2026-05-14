@@ -22,7 +22,7 @@ This produces a loadable unpacked extension under `extension/.output/chrome-mv3`
 3. Click **Load unpacked**.
 4. Select `extension/.output/chrome-mv3`.
 
-For Firefox, run `pnpm build:firefox` and load `extension/.output/firefox-mv3`
+For Firefox, run `pnpm build:firefox` and load `extension/.output/firefox-mv2`
 via `about:debugging`.
 
 ## Pre-release manual verification

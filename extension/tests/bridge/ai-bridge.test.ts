@@ -28,4 +28,20 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 100 });
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/not ready/i);
   });
+
+  it('does not resolve with a stale prior response left in the DOM', async () => {
+    const adapter = new FakeAdapter();
+    // Simulate a previous completed turn still visible in the DOM.
+    adapter.scriptResponse('OLD stale response', { complete: true });
+
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000 });
+    const promise = bridge.sendAndAwaitResponse('a new question');
+
+    // The new turn completes a bit later with fresh text.
+    setTimeout(() => adapter.scriptResponse('the NEW response', { complete: true }), 30);
+
+    const result = await promise;
+    expect(result).toBe('the NEW response');
+    expect(result).not.toBe('OLD stale response');
+  });
 });

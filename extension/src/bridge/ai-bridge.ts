@@ -32,6 +32,12 @@ export class AIBridge {
       throw new Error(`AIBridge: adapter "${this.adapter.name}" is not ready`);
     }
 
+    // Capture the current (previous turn's) response BEFORE sending. On a real
+    // site the prior assistant message stays in the DOM and the stop-generating
+    // control hasn't appeared yet, so without this baseline the first poll would
+    // resolve with the stale previous response.
+    const baseline = this.adapter.getLatestResponseText();
+
     this.adapter.setInputValue(text);
     this.adapter.clickSend();
 
@@ -44,7 +50,7 @@ export class AIBridge {
         }
         if (this.adapter.isResponseComplete()) {
           const responseText = this.adapter.getLatestResponseText();
-          if (responseText.length > 0) {
+          if (responseText.length > 0 && responseText !== baseline) {
             resolve(responseText);
             return;
           }

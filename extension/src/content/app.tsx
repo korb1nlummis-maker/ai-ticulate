@@ -116,9 +116,20 @@ function errorMessage(err: unknown): string {
 }
 
 /** Mount the panel + launcher into a host element on the page. */
-export function mountApp(bridge: AIBridge, container: HTMLElement): AppController {
+export function mountApp(
+  bridge: AIBridge,
+  container: HTMLElement,
+  settings?: { panelSide: 'left' | 'right'; autoOpenOnLoad: boolean },
+): AppController {
   const controller = new AppController(bridge);
   const root = createRoot(container);
+
+  if (settings?.autoOpenOnLoad) {
+    controller.open = true;
+  }
+  if (settings?.panelSide === 'left') {
+    container.classList.add('ait-panel-side-left');
+  }
 
   const renderAll = (): void => {
     root.render(

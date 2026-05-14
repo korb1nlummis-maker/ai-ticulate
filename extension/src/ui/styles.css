@@ -158,3 +158,17 @@
   margin-bottom: 6px;
   margin-top: 4px;
 }
+
+/* Left-side panel placement (Settings: panelSide = 'left'). */
+.ait-panel-side-left .ait-panel {
+  right: auto;
+  left: 0;
+  border-left: none;
+  border-right: 1px solid #e2e2e2;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.ait-panel-side-left .ait-launcher {
+  right: auto;
+  left: 20px;
+}
