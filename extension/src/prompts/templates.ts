@@ -2,22 +2,32 @@
  * Meta-prompt templates — the "prebuilt nuance". These produce the text the
  * extension types into the user's AI chat. Each asks the AI to respond in a
  * format the response parser (parser/response-parser.ts) can read. The format
- * markers (### QUESTION, ### SUGGESTIONS, ### OPTION n, ### STATUS) are a
- * contract — keep them in sync with the parser.
+ * markers (QUESTION, SUGGESTIONS, OPTION n, STATUS) are a contract — keep them
+ * in sync with the parser.
+ *
+ * IMPORTANT: the markers must be PLAIN-TEXT lines. claude.ai / ChatGPT / Gemini
+ * all render markdown, so a "### QUESTION" heading would become an invisible
+ * <h3> and the "###" would not survive in .textContent. We therefore instruct
+ * the AI to write the marker words with no markdown formatting at all.
  */
 
 const FORMAT_RULES = `
-Format your reply EXACTLY like this so a tool can read it:
-- If you need to ask clarifying questions, output one or more blocks:
-  ### QUESTION
-  <the question, one short sentence>
-  ### SUGGESTIONS
-  <2-5 short suggested answers, one per line>
+Format your reply so a tool can read it. Use these EXACT plain-text marker lines —
+write them as ordinary text, NOT as markdown headers, NOT bold, no "#" characters,
+no formatting of any kind on the marker lines:
+
+- To ask a clarifying question, output:
+QUESTION
+<the question, one short sentence>
+SUGGESTIONS
+<2-5 short suggested answers, one per line>
+
 - After your questions (or if you need none), output:
-  ### STATUS
-  ready
-  (use "ready" if you have enough to proceed, otherwise "need-more")
-Do not output anything else outside these blocks.
+STATUS
+ready
+(use "ready" if you have enough to proceed, otherwise: need-more)
+
+Do not output anything else outside these marker blocks. Do not use markdown headers (#).
 `.trim();
 
 export function buildRefinePrompt(userRequest: string): string {
@@ -45,18 +55,20 @@ ${answersBlock}
 
 Now give me 5 distinct, detailed prompt options I could send you to get a great result. Each option should be a complete, ready-to-send prompt — more specific and richer than my original request. Make the 5 genuinely different in angle, not the same prompt at 5 lengths. Where a useful detail could be personalized, leave a blank like [___].
 
-Format your reply EXACTLY like this:
-### OPTION 1
+Format your reply using these EXACT plain-text marker lines — write them as
+ordinary text, NOT as markdown headers, NOT bold, no "#" characters, no
+formatting of any kind on the marker lines:
+OPTION 1
 <the full prompt text>
-### OPTION 2
+OPTION 2
 <the full prompt text>
-### OPTION 3
+OPTION 3
 <the full prompt text>
-### OPTION 4
+OPTION 4
 <the full prompt text>
-### OPTION 5
+OPTION 5
 <the full prompt text>
-Do not output anything else.`;
+Do not output anything else. Do not use markdown headers (#).`;
 }
 
 /**

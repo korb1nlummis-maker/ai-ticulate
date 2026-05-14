@@ -21,6 +21,20 @@ export function findLatestMessageTextStructurally(): string {
   for (const el of all) {
     // Skip our own UI.
     if (el.id === 'ai-ticulate-root' || el.closest('#ai-ticulate-root')) continue;
+    // Skip non-content tags (script/style/etc.) and anything inside one — a
+    // <script>'s textContent is code, not a chat message.
+    const tag = el.tagName.toUpperCase();
+    if (
+      tag === 'SCRIPT' ||
+      tag === 'STYLE' ||
+      tag === 'NOSCRIPT' ||
+      tag === 'TEMPLATE' ||
+      tag === 'SVG' ||
+      tag === 'HEAD' ||
+      el.closest('script, style, noscript, template, svg')
+    ) {
+      continue;
+    }
     // Skip form controls / inputs.
     if (
       el instanceof HTMLTextAreaElement ||
@@ -48,4 +62,30 @@ export function findLatestMessageTextStructurally(): string {
   // The latest assistant turn is the last message-like block in document order.
   const last = candidates[candidates.length - 1];
   return (last?.textContent ?? '').trim();
+}
+
+/**
+ * Words that, when present in a button's aria-label, indicate the button is
+ * NOT the chat "send" control (e.g. "Add files, connectors, and more"). Used
+ * by every adapter's findSendButton() to reject a wrong fall-through match.
+ */
+const NON_SEND_LABEL_WORDS = [
+  'add',
+  'file',
+  'attach',
+  'connector',
+  'model',
+  'voice',
+  'menu',
+  'sidebar',
+  'copy',
+  'retry',
+  'share',
+  'pin',
+  'settings',
+];
+
+export function looksLikeNonSendButton(btn: Element): boolean {
+  const label = (btn.getAttribute('aria-label') ?? '').toLowerCase();
+  return NON_SEND_LABEL_WORDS.some((w) => label.includes(w));
 }

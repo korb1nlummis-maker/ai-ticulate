@@ -16,19 +16,26 @@ type MarkerType =
 
 function classify(line: string): MarkerType {
   const t = line.trim();
-  if (/^###\s*OPTION\s*\d+\s*$/i.test(t)) return 'option';
-  if (/^###\s*QUESTION\s*$/i.test(t)) return 'question';
-  if (/^###\s*SUGGESTIONS\s*$/i.test(t)) return 'suggestions';
-  if (/^###\s*STATUS\s*$/i.test(t)) return 'status';
-  if (/^###/.test(t)) return 'other-marker';
+  // Markers may be plain-text lines (the format we now ask for, since AIs
+  // render markdown) OR carry a leading "#" run (older "### QUESTION" form, or
+  // an AI that still applies markdown). Accept an OPTIONAL "#" run either way.
+  if (/^#{0,6}\s*OPTION\s*\d+\s*$/i.test(t)) return 'option';
+  if (/^#{0,6}\s*QUESTION\s*$/i.test(t)) return 'question';
+  if (/^#{0,6}\s*SUGGESTIONS\s*$/i.test(t)) return 'suggestions';
+  if (/^#{0,6}\s*STATUS\s*$/i.test(t)) return 'status';
+  // Some other markdown heading — requires at least one "#" followed by a
+  // space, so plain content lines are not misclassified as markers.
+  if (/^#{1,6}\s/.test(t)) return 'other-marker';
   return 'content';
 }
 
 /**
  * Parse the AI's raw reply text into structured data. The AI was instructed
- * (by the meta-prompt templates) to use ### QUESTION / ### SUGGESTIONS /
- * ### OPTION n / ### STATUS markers. This scanner is deliberately tolerant of
- * extra prose around the markers, since models sometimes add a greeting.
+ * (by the meta-prompt templates) to use plain-text QUESTION / SUGGESTIONS /
+ * OPTION n / STATUS marker lines. `classify()` also tolerates an optional
+ * leading "#" run, so the older "### QUESTION" form still parses. This scanner
+ * is deliberately tolerant of extra prose around the markers, since models
+ * sometimes add a greeting.
  */
 export function parseResponse(raw: string): ParsedResponse {
   const lines = raw.split(/\r?\n/);

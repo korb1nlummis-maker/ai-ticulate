@@ -1,5 +1,5 @@
 import { AdapterDiagnostics, SiteAdapter } from './types.js';
-import { findLatestMessageTextStructurally } from './dom-utils.js';
+import { findLatestMessageTextStructurally, looksLikeNonSendButton } from './dom-utils.js';
 
 /**
  * Adapter for gemini.google.com. Uses resilient heuristics over stable
@@ -31,7 +31,7 @@ export class GeminiAdapter implements SiteAdapter {
   }
 
   private findSendButton(): HTMLButtonElement | null {
-    return (
+    const candidate =
       // Most specific: Gemini's known aria-labels.
       document.querySelector<HTMLButtonElement>('button[aria-label="Send message"]') ??
       document.querySelector<HTMLButtonElement>('button[aria-label*="Send" i]') ??
@@ -39,8 +39,10 @@ export class GeminiAdapter implements SiteAdapter {
       document.querySelector<HTMLButtonElement>('button[type="submit"]') ??
       // Last resort: the final button in the input area / composer form.
       document.querySelector<HTMLButtonElement>('.input-area button:last-of-type') ??
-      document.querySelector<HTMLButtonElement>('form button:last-of-type')
-    );
+      document.querySelector<HTMLButtonElement>('form button:last-of-type');
+    // Never return a button whose aria-label indicates a non-send action.
+    if (candidate && looksLikeNonSendButton(candidate)) return null;
+    return candidate;
   }
 
   isReady(): boolean {
@@ -114,7 +116,7 @@ export class GeminiAdapter implements SiteAdapter {
     const input = this.findInput();
     if (input) {
       input.focus();
-      for (const type of ['keydown', 'keyup'] as const) {
+      for (const type of ['keydown', 'keypress', 'keyup'] as const) {
         input.dispatchEvent(
           new KeyboardEvent(type, {
             key: 'Enter',
@@ -226,6 +228,19 @@ export class GeminiAdapter implements SiteAdapter {
         });
       notes.push(`last 10 substantial text blocks in <main>:`);
       for (const b of blocks) notes.push(`  ${b}`);
+
+      const buttons = Array.from(document.querySelectorAll('button'))
+        .slice(0, 40)
+        .map((b) => {
+          const al = b.getAttribute('aria-label') ?? '';
+          const ti = b.getAttribute('title') ?? '';
+          const ty = b.getAttribute('type') ?? '';
+          const dis = (b as HTMLButtonElement).disabled ? ' disabled' : '';
+          const txt = (b.textContent ?? '').trim().slice(0, 25);
+          return `button[aria-label="${al}" title="${ti}" type="${ty}"${dis}] "${txt}"`;
+        });
+      notes.push(`buttons on page (first 40):`);
+      for (const b of buttons) notes.push(`  ${b}`);
     }
     return {
       site: this.name,

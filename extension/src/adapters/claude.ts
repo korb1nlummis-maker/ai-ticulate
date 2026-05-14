@@ -1,5 +1,5 @@
 import { AdapterDiagnostics, SiteAdapter } from './types.js';
-import { findLatestMessageTextStructurally } from './dom-utils.js';
+import { findLatestMessageTextStructurally, looksLikeNonSendButton } from './dom-utils.js';
 
 /**
  * Adapter for claude.ai. Uses resilient heuristics over stable attributes
@@ -31,7 +31,7 @@ export class ClaudeAdapter implements SiteAdapter {
   }
 
   private findSendButton(): HTMLButtonElement | null {
-    return (
+    const candidate =
       // Most specific: Claude's known aria-labels.
       document.querySelector<HTMLButtonElement>('button[aria-label="Send message"]') ??
       document.querySelector<HTMLButtonElement>('button[aria-label*="Send" i]') ??
@@ -39,8 +39,11 @@ export class ClaudeAdapter implements SiteAdapter {
       document.querySelector<HTMLButtonElement>('button[type="submit"]') ??
       // Last resort: the final button in the composer form/fieldset.
       document.querySelector<HTMLButtonElement>('fieldset button:last-of-type') ??
-      document.querySelector<HTMLButtonElement>('form button:last-of-type')
-    );
+      document.querySelector<HTMLButtonElement>('form button:last-of-type');
+    // Never return a button whose aria-label indicates a non-send action
+    // (e.g. "Add files, connectors, and more") — that would mis-send.
+    if (candidate && looksLikeNonSendButton(candidate)) return null;
+    return candidate;
   }
 
   isReady(): boolean {
@@ -114,7 +117,7 @@ export class ClaudeAdapter implements SiteAdapter {
     const input = this.findInput();
     if (input) {
       input.focus();
-      for (const type of ['keydown', 'keyup'] as const) {
+      for (const type of ['keydown', 'keypress', 'keyup'] as const) {
         input.dispatchEvent(
           new KeyboardEvent(type, {
             key: 'Enter',
@@ -145,23 +148,62 @@ export class ClaudeAdapter implements SiteAdapter {
   }
 
   getLatestResponseText(): string {
-    const selectorChain = [
-      // Most specific: Claude's known assistant-message markers.
-      '[data-testid="assistant-message"]',
-      '.font-claude-message',
-      // Broader: any element flagged as a non-user / model turn.
-      '[data-testid*="assistant" i]',
-      '[class*="claude-message" i]',
-    ];
-    for (const sel of selectorChain) {
-      const messages = document.querySelectorAll<HTMLElement>(sel);
-      if (messages.length > 0) {
-        const last = messages[messages.length - 1];
+    const paragraphs = Array.from(
+      document.querySelectorAll<HTMLElement>('.font-claude-response-body'),
+    );
+    if (paragraphs.length > 0) {
+      // The latest assistant turn = all response paragraphs that appear AFTER
+      // the last user message in document order.
+      const userMsgs = document.querySelectorAll<HTMLElement>('[data-testid="user-message"]');
+      const lastUser = userMsgs[userMsgs.length - 1] ?? null;
+      let latest = paragraphs;
+      if (lastUser) {
+        latest = paragraphs.filter(
+          (p) =>
+            (lastUser.compareDocumentPosition(p) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+        );
+      }
+      const chosen = latest.length > 0 ? latest : paragraphs;
+
+      // Read the tightest common ancestor of the latest paragraphs, so any
+      // marker headings (rendered from markdown) between paragraphs are also
+      // captured — but never go so high that we'd include the user message.
+      let container: HTMLElement | null = chosen[0] ?? null;
+      if (container) {
+        while (
+          container.parentElement &&
+          !chosen.every((p) => container!.contains(p))
+        ) {
+          container = container.parentElement;
+        }
+        // Safety: if the container also swallowed the user message, it's too
+        // high — fall back to concatenating just the paragraph texts.
+        if (lastUser && container && container.contains(lastUser)) {
+          return chosen
+            .map((p) => p.textContent?.trim() ?? '')
+            .filter((t) => t.length > 0)
+            .join('\n');
+        }
+        const text = container?.textContent?.trim() ?? '';
+        if (text.length > 0) return text;
+      }
+      // Fallback: concatenate the chosen paragraph texts.
+      return chosen
+        .map((p) => p.textContent?.trim() ?? '')
+        .filter((t) => t.length > 0)
+        .join('\n');
+    }
+
+    // Older guessed selectors, kept as a secondary fallback.
+    for (const sel of ['[data-testid="assistant-message"]', '.font-claude-message']) {
+      const els = document.querySelectorAll<HTMLElement>(sel);
+      if (els.length > 0) {
+        const last = els[els.length - 1];
         const text = (last?.textContent ?? '').trim();
         if (text.length > 0) return text;
       }
     }
-    // Structural fallback — selectors didn't match the live DOM.
+
     return findLatestMessageTextStructurally();
   }
 
@@ -179,10 +221,8 @@ export class ClaudeAdapter implements SiteAdapter {
   diagnose(): AdapterDiagnostics {
     const input = this.findInput();
     const sendButton = this.findSendButton();
-    // responseContainer: reuse the same selectors getLatestResponseText relies on.
-    const responseEl =
-      document.querySelector('[data-testid="assistant-message"]') ??
-      document.querySelector('.font-claude-message');
+    // responseContainer: reuse the real selector getLatestResponseText relies on.
+    const responseEl = document.querySelector('.font-claude-response-body');
     const notes: string[] = [];
     if (input)
       notes.push(
@@ -225,6 +265,19 @@ export class ClaudeAdapter implements SiteAdapter {
         });
       notes.push(`last 10 substantial text blocks in <main>:`);
       for (const b of blocks) notes.push(`  ${b}`);
+
+      const buttons = Array.from(document.querySelectorAll('button'))
+        .slice(0, 40)
+        .map((b) => {
+          const al = b.getAttribute('aria-label') ?? '';
+          const ti = b.getAttribute('title') ?? '';
+          const ty = b.getAttribute('type') ?? '';
+          const dis = (b as HTMLButtonElement).disabled ? ' disabled' : '';
+          const txt = (b.textContent ?? '').trim().slice(0, 25);
+          return `button[aria-label="${al}" title="${ti}" type="${ty}"${dis}] "${txt}"`;
+        });
+      notes.push(`buttons on page (first 40):`);
+      for (const b of buttons) notes.push(`  ${b}`);
     }
     return {
       site: this.name,
