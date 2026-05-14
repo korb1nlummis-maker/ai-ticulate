@@ -85,6 +85,14 @@ The project owner course-corrected the architecture, hard and clearly:
 - Conceptual basis: the v1 backend prompts, rewritten as meta-prompts the user's own AI executes.
 - Commit: 49a9f0e
 
+### Extension Task 8 complete — Response parser
+
+- `parseResponse(raw)` turns the AI's raw reply (read off the page) into structured data: `{kind:'questions', questions, status}` | `{kind:'options', options}` | `{kind:'unknown', raw}`.
+- Implemented as a line-by-line scanner (classify each line as a marker or content, then walk a small state machine) — simple and debuggable, no intricate regex.
+- Tolerant of extra prose around the markers — models sometimes add a greeting/sign-off, and the scanner ignores it. Handles multi-line option bodies.
+- `unknown` kind is the graceful-degradation path: if the AI didn't follow the format, the orchestrator can fall back to showing the raw text.
+- Commit: 78aeabe
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
