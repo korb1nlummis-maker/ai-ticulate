@@ -132,6 +132,16 @@ Live test #7: the meta-prompt stopped landing in Claude's input entirely. The di
 
 Commit: 991c807
 
+### Live-test fix #9 — retry the flaky TipTap insertion
+
+Live test #8: still no text landing in Claude's editor. The diagnostic confirms `findInput()` finds the correct element — so this is pure flakiness. `execCommand('insertText')` is the right method for TipTap/ProseMirror (trusted beforeinput → editor's real pipeline) and it DID work in one earlier live test, but it's sensitive to focus timing and silently no-ops if the editor isn't fully focus-settled.
+
+**Fix:** `insertTextIntoEditable` is now **async with a retry loop** — focus, let focus settle (a macrotask tick), `execCommand`, verify the text actually landed in the DOM, retry up to 6× with brief pauses. Flaky-but-sometimes-works becomes reliable-across-retries. This made `setInputValue` async, which rippled through the `SiteAdapter` interface, all three adapters, `FakeAdapter`, the bridge, and the tests — all updated.
+
+74 tests passing.
+
+Commit: 83d5430
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
