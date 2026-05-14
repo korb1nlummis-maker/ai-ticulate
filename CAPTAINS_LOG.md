@@ -106,6 +106,19 @@ Live test #5's "Copy diagnostics" output gave us ground truth from claude.ai for
 
 Commit: f18fd30
 
+### Live-test fix #7 — robust ProseMirror text insertion
+
+Live test #6: the meta-prompt never got into Claude's input — the page stayed empty. Root cause: Claude's ProseMirror editor runs a MutationObserver that REVERTS naive `textContent` changes, and `execCommand` is flaky; `findInput` may also have been matching a wrapper `<div>`.
+
+**Fixes:**
+1. **`insertTextIntoEditable` helper** (`dom-utils.ts`) — shared multi-strategy insertion: synthetic **paste** event first (rich editors handle paste robustly), then execCommand insertText, then beforeinput, then textContent as last resort. All three adapters' `setInputValue` now use it.
+2. **`ClaudeAdapter.findInput()`** anchors on the stable `[data-testid="chat-input"]` marker first (`[data-testid="chat-input"] [contenteditable="true"]`), so we target the true editable element, not a wrapper.
+3. **`diagnose()`** now dumps the matched input's full tag/attributes/contentEditable state and its surrounding outerHTML, plus (for Claude) the `[data-testid="chat-input"]` outerHTML — so the exact editor structure is visible if insertion still slips.
+
+74 tests passing.
+
+Commit: 81d02e9
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
