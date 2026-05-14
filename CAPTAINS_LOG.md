@@ -10,6 +10,25 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-14 — ai-ticulate v1 — finished product
+
+### Polish pass merged — v1 is a finished product
+
+The `feat/polish` branch (icons + manifest, adapter hardening + engine follow-ups, UX/CSS polish) is merged to `main`. Tests verified green on the merged result: **60 passing**. Branch deleted; `origin/main` up to date.
+
+**ai-ticulate v1 is complete.** A finished, shippable Manifest V3 browser extension:
+- Full engine (3 site adapters, AI bridge, meta-prompt templates, response parser, task tracker, orchestrator) + React panel UI + content-script integration
+- Hardened adapters with widened selector fallback chains; graceful "completed but empty" handling; calm error states with a "Start over" escape hatch so the user is never stuck
+- Polished UI: card-style panel, accent color matching the icon, dark-mode variant, focus-visible states, `role="dialog"`, accessible buttons, defensive scoped CSS reset
+- Icon set (sparkle ✨, indigo/violet) at all manifest sizes
+- 60 automated tests; Chrome + Firefox both build; repo-root + extension READMEs
+
+**The one thing that genuinely still needs a human:** live-site verification of the three adapters against the real chatgpt.com / claude.ai / gemini.google.com DOM — see `extension/README.md`'s pre-release checklist. This is the irreducible boundary between headless-verifiable logic and the live DOM of sites we don't control. If a selector has drifted, only that one adapter file needs updating; the widened fallback chains make a clean match more likely.
+
+That is the honest finish line. The planned + polished scope is done.
+
+---
+
 ## 2026-05-14 — Extension merged to main; v1 built
 
 ### feat/extension merged to main
