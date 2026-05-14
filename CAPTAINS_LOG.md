@@ -40,6 +40,15 @@ User asked to operate autonomously and not gate on permission for routine decisi
 - Test count: 58 passing.
 - Commit: 650ecdf
 
+### Polish — UX/CSS, view states, accessibility
+
+- Reworked `styles.css` into a genuinely polished panel: card styling, accent color matching the icon's indigo/violet identity, hover + focus-visible states on all interactives, comfortable hit targets, a `prefers-color-scheme: dark` variant, and a defensive style reset scoped to `.ait-panel` so host-page CSS can't bleed in.
+- Every `view.kind` state now feels intentional: welcoming idle copy, a tasteful CSS loading affordance, coherent questions/options layouts, a satisfying `done` state, and a calm `error` state.
+- Added a "Start over" action (new optional `onRestart` prop + `AppController.reset()`) on the `done` and `error` states so the user is never stuck.
+- Accessibility: `role="dialog"` on the panel, `aria-label`s on icon-only buttons, focus-visible outlines, real `<button>` elements for chips/options.
+- Contracts intact — `PanelView` / `PanelProps` unchanged except the additive optional `onRestart`. Tests: 60 passing.
+- Commit: 9a41ebf21014070c4103702537b9c00677143589
+
 ---
 
 ## 2026-05-14 — ARCHITECTURE PIVOT: pure browser extension
