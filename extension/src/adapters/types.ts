@@ -8,6 +8,16 @@ export type AdapterDiagnostics = {
   inputFound: boolean;
   sendButtonFound: boolean;
   responseContainerFound: boolean;
+  /** What's actually in the input RIGHT NOW (first 200 chars). */
+  inputCurrentText: string;
+  /** document.activeElement description — is focus where we expect? */
+  activeElement: string;
+  /** Does document.queryCommandSupported('insertText') return true? */
+  execCommandSupported: boolean;
+  /** document.hasFocus() */
+  documentHasFocus: boolean;
+  /** A short summary, e.g. "userMessages=1 responseBlocks=3". */
+  conversationTurns: string;
   notes: string[];
 };
 

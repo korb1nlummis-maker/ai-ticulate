@@ -1,4 +1,5 @@
 import { AdapterDiagnostics, SiteAdapter } from '../adapters/types.js';
+import { trace } from '../trace.js';
 
 export type AIBridgeOptions = {
   /** How often to poll for response completion, in ms. */
@@ -49,7 +50,9 @@ export class AIBridge {
   }
 
   async sendAndAwaitResponse(text: string): Promise<string> {
+    trace('AIBridge.send: start');
     if (!this.adapter.isReady()) {
+      trace('AIBridge.send: adapter not ready');
       throw new Error(`AIBridge: adapter "${this.adapter.name}" is not ready`);
     }
 
@@ -58,12 +61,16 @@ export class AIBridge {
     // control hasn't appeared yet, so without this baseline the first poll would
     // resolve with the stale previous response.
     const baseline = this.adapter.getLatestResponseText();
+    trace('AIBridge.send: baseline captured', 'len=' + baseline.length);
 
+    trace('AIBridge.send: setInputValue start');
     await this.adapter.setInputValue(text);
+    trace('AIBridge.send: setInputValue done');
     // Give the editor a beat to process the injected input before we send;
     // otherwise the Enter keypress / send click can race an editor the site
     // still thinks is empty, and the message silently never sends.
     await delay(this.options.sendDelayMs);
+    trace('AIBridge.send: clickSend');
     this.adapter.clickSend();
 
     // Remember what we sent so we never resolve with our own prompt echoed
@@ -77,20 +84,33 @@ export class AIBridge {
     // no new readable text. Reset to null whenever that condition isn't met,
     // so only a *continuous* window of complete-but-empty triggers early exit.
     let completeButEmptySince: number | null = null;
+    let pollCount = 0;
     return new Promise<string>((resolve, reject) => {
       const poll = (): void => {
+        pollCount++;
         if (Date.now() - startedAt > this.options.timeoutMs) {
+          trace('AIBridge.send: TIMED OUT');
           reject(new Error('AIBridge: response timed out'));
           return;
         }
-        if (this.adapter.isResponseComplete()) {
+        const isComplete = this.adapter.isResponseComplete();
+        if (isComplete) {
           const responseText = this.adapter.getLatestResponseText();
+          const changedFromBaseline = responseText !== baseline;
+          const tracePoll = (label: string): void => {
+            trace(
+              label,
+              `attempt=${pollCount} isComplete=${isComplete} textLen=${responseText.length} changedFromBaseline=${changedFromBaseline}`,
+            );
+          };
           if (
             responseText.length > 0 &&
-            responseText !== baseline &&
+            changedFromBaseline &&
             !this.looksLikeEcho(responseText, sentText)
           ) {
             // Happy path: complete with fresh, readable text.
+            tracePoll('AIBridge.send: poll');
+            trace('AIBridge.send: RESOLVED', 'textLen=' + responseText.length);
             resolve(responseText);
             return;
           }
@@ -99,14 +119,24 @@ export class AIBridge {
           // finished but produced nothing we can read.
           completeButEmptySince ??= Date.now();
           if (Date.now() - completeButEmptySince > this.options.emptyResponseGraceMs) {
+            tracePoll('AIBridge.send: poll');
+            trace('AIBridge.send: REJECTED no-readable-response');
             reject(
               new Error('AIBridge: the AI finished but produced no readable response'),
             );
             return;
           }
+          if (pollCount === 1 || pollCount % 5 === 0) tracePoll('AIBridge.send: poll');
         } else {
           // Still generating — clear the grace timer.
           completeButEmptySince = null;
+          if (pollCount === 1 || pollCount % 5 === 0) {
+            const responseText = this.adapter.getLatestResponseText();
+            trace(
+              'AIBridge.send: poll',
+              `attempt=${pollCount} isComplete=${isComplete} textLen=${responseText.length} changedFromBaseline=${responseText !== baseline}`,
+            );
+          }
         }
         setTimeout(poll, this.options.pollIntervalMs);
       };

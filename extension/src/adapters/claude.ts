@@ -4,6 +4,12 @@ import {
   insertTextIntoEditable,
   looksLikeNonSendButton,
 } from './dom-utils.js';
+import {
+  describeActiveElement,
+  execInsertTextSupported,
+  readInputCurrentText,
+} from './diag-utils.js';
+import { trace } from '../trace.js';
 
 /**
  * Adapter for claude.ai. Uses resilient heuristics over stable attributes
@@ -59,6 +65,7 @@ export class ClaudeAdapter implements SiteAdapter {
 
   async setInputValue(text: string): Promise<void> {
     const input = this.findInput();
+    trace('ClaudeAdapter.setInputValue', 'inputFound=' + (input ? 'yes' : 'no'));
     if (!input) throw new Error('ClaudeAdapter: input not found');
 
     if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
@@ -75,6 +82,11 @@ export class ClaudeAdapter implements SiteAdapter {
 
   clickSend(): void {
     const input = this.findInput();
+    const btn = this.findSendButton();
+    trace(
+      'ClaudeAdapter.clickSend',
+      'input=' + (input ? 'yes' : 'no') + ' button=' + (btn ? 'yes' : 'no'),
+    );
     if (input) {
       input.focus();
       const fire = (type: 'keydown' | 'keypress' | 'keyup'): void => {
@@ -95,7 +107,6 @@ export class ClaudeAdapter implements SiteAdapter {
       fire('keyup');
     }
     // Also click a confidently-identified send button if one is present.
-    const btn = this.findSendButton();
     if (
       btn &&
       !btn.disabled &&
@@ -109,6 +120,10 @@ export class ClaudeAdapter implements SiteAdapter {
   }
 
   getLatestResponseText(): string {
+    const via = (label: string, result: string): string => {
+      trace('ClaudeAdapter.getLatestResponseText', label + ' returnedLen=' + result.length);
+      return result;
+    };
     const paragraphs = Array.from(
       document.querySelectorAll<HTMLElement>('.font-claude-response-body'),
     );
@@ -140,19 +155,27 @@ export class ClaudeAdapter implements SiteAdapter {
         // Safety: if the container also swallowed the user message, it's too
         // high — fall back to concatenating just the paragraph texts.
         if (lastUser && container && container.contains(lastUser)) {
-          return chosen
-            .map((p) => p.textContent?.trim() ?? '')
-            .filter((t) => t.length > 0)
-            .join('\n');
+          return via(
+            'via=font-claude-response-body(paragraphs) count=' + chosen.length,
+            chosen
+              .map((p) => p.textContent?.trim() ?? '')
+              .filter((t) => t.length > 0)
+              .join('\n'),
+          );
         }
         const text = container?.textContent?.trim() ?? '';
-        if (text.length > 0) return text;
+        if (text.length > 0) {
+          return via('via=font-claude-response-body count=' + chosen.length, text);
+        }
       }
       // Fallback: concatenate the chosen paragraph texts.
-      return chosen
-        .map((p) => p.textContent?.trim() ?? '')
-        .filter((t) => t.length > 0)
-        .join('\n');
+      return via(
+        'via=font-claude-response-body(paragraphs) count=' + chosen.length,
+        chosen
+          .map((p) => p.textContent?.trim() ?? '')
+          .filter((t) => t.length > 0)
+          .join('\n'),
+      );
     }
 
     // Older guessed selectors, kept as a secondary fallback.
@@ -161,11 +184,12 @@ export class ClaudeAdapter implements SiteAdapter {
       if (els.length > 0) {
         const last = els[els.length - 1];
         const text = (last?.textContent ?? '').trim();
-        if (text.length > 0) return text;
+        if (text.length > 0) return via('via=' + sel, text);
       }
     }
 
-    return findLatestMessageTextStructurally();
+    const structural = findLatestMessageTextStructurally();
+    return via(structural.length > 0 ? 'via=structural' : 'via=none', structural);
   }
 
   isResponseComplete(): boolean {
@@ -256,11 +280,18 @@ export class ClaudeAdapter implements SiteAdapter {
       notes.push(`buttons on page (first 40):`);
       for (const b of buttons) notes.push(`  ${b}`);
     }
+    const userMessageCount = document.querySelectorAll('[data-testid="user-message"]').length;
+    const responseBlockCount = document.querySelectorAll('.font-claude-response-body').length;
     return {
       site: this.name,
       inputFound: input !== null,
       sendButtonFound: sendButton !== null,
       responseContainerFound: responseEl !== null,
+      inputCurrentText: readInputCurrentText(input),
+      activeElement: describeActiveElement(),
+      execCommandSupported: execInsertTextSupported(),
+      documentHasFocus: document.hasFocus(),
+      conversationTurns: `userMessages=${userMessageCount} responseBlocks=${responseBlockCount}`,
       notes,
     };
   }

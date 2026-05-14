@@ -4,6 +4,12 @@ import {
   insertTextIntoEditable,
   looksLikeNonSendButton,
 } from './dom-utils.js';
+import {
+  describeActiveElement,
+  execInsertTextSupported,
+  readInputCurrentText,
+} from './diag-utils.js';
+import { trace } from '../trace.js';
 
 /**
  * Adapter for chatgpt.com. Uses resilient heuristics: prefers stable
@@ -62,6 +68,7 @@ export class ChatGPTAdapter implements SiteAdapter {
 
   async setInputValue(text: string): Promise<void> {
     const input = this.findInput();
+    trace('ChatGPTAdapter.setInputValue', 'inputFound=' + (input ? 'yes' : 'no'));
     if (!input) throw new Error('ChatGPTAdapter: input not found');
 
     if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
@@ -78,6 +85,11 @@ export class ChatGPTAdapter implements SiteAdapter {
 
   clickSend(): void {
     const input = this.findInput();
+    const btn = this.findSendButton();
+    trace(
+      'ChatGPTAdapter.clickSend',
+      'input=' + (input ? 'yes' : 'no') + ' button=' + (btn ? 'yes' : 'no'),
+    );
     if (input) {
       input.focus();
       const fire = (type: 'keydown' | 'keypress' | 'keyup'): void => {
@@ -98,7 +110,6 @@ export class ChatGPTAdapter implements SiteAdapter {
       fire('keyup');
     }
     // Also click a confidently-identified send button if one is present.
-    const btn = this.findSendButton();
     if (
       btn &&
       !btn.disabled &&
@@ -112,6 +123,10 @@ export class ChatGPTAdapter implements SiteAdapter {
   }
 
   getLatestResponseText(): string {
+    const via = (label: string, result: string): string => {
+      trace('ChatGPTAdapter.getLatestResponseText', label + ' returnedLen=' + result.length);
+      return result;
+    };
     // Most specific: assistant messages by author-role attribute.
     const selectorChain = [
       '[data-message-author-role="assistant"]',
@@ -125,11 +140,12 @@ export class ChatGPTAdapter implements SiteAdapter {
       if (messages.length > 0) {
         const last = messages[messages.length - 1];
         const text = (last?.textContent ?? '').trim();
-        if (text.length > 0) return text;
+        if (text.length > 0) return via('via=' + sel + ' count=' + messages.length, text);
       }
     }
     // Structural fallback — selectors didn't match the live DOM.
-    return findLatestMessageTextStructurally();
+    const structural = findLatestMessageTextStructurally();
+    return via(structural.length > 0 ? 'via=structural' : 'via=none', structural);
   }
 
   isResponseComplete(): boolean {
@@ -212,11 +228,19 @@ export class ChatGPTAdapter implements SiteAdapter {
       notes.push(`buttons on page (first 40):`);
       for (const b of buttons) notes.push(`  ${b}`);
     }
+    const assistantMsgCount = document.querySelectorAll(
+      '[data-message-author-role="assistant"]',
+    ).length;
     return {
       site: this.name,
       inputFound: input !== null,
       sendButtonFound: sendButton !== null,
       responseContainerFound: responseEl !== null,
+      inputCurrentText: readInputCurrentText(input),
+      activeElement: describeActiveElement(),
+      execCommandSupported: execInsertTextSupported(),
+      documentHasFocus: document.hasFocus(),
+      conversationTurns: `assistantMsgs=${assistantMsgCount}`,
       notes,
     };
   }

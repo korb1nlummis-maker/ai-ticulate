@@ -50,6 +50,11 @@ export class FakeAdapter implements SiteAdapter {
       inputFound: true,
       sendButtonFound: true,
       responseContainerFound: true,
+      inputCurrentText: this.inputValue,
+      activeElement: 'fake',
+      execCommandSupported: false,
+      documentHasFocus: true,
+      conversationTurns: 'n/a (fake)',
       notes: ['fake adapter'],
     };
   }

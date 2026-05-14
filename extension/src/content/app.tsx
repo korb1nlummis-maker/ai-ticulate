@@ -5,6 +5,7 @@ import { Orchestrator } from '../orchestrator/orchestrator.js';
 import { ParsedResponse } from '../parser/response-parser.js';
 import { Panel, PanelView } from '../ui/Panel.js';
 import { Launcher } from '../ui/Launcher.js';
+import { trace, traceReset, formatTrace } from '../trace.js';
 
 type Subscriber = () => void;
 
@@ -18,8 +19,15 @@ function formatDiagnosticsText(diag: AdapterDiagnostics): string {
   lines.push('=== ai-ticulate diagnostics ===');
   lines.push(`site: ${diag.site}`);
   lines.push(`input found: ${diag.inputFound}`);
+  lines.push(`input current text: ${JSON.stringify(diag.inputCurrentText)}`);
   lines.push(`send button found: ${diag.sendButtonFound}`);
   lines.push(`response container found: ${diag.responseContainerFound}`);
+  lines.push(`execCommand insertText supported: ${diag.execCommandSupported}`);
+  lines.push(`document.hasFocus(): ${diag.documentHasFocus}`);
+  lines.push(`active element: ${diag.activeElement}`);
+  lines.push(`conversation: ${diag.conversationTurns}`);
+  lines.push('--- execution trace ---');
+  lines.push(formatTrace());
   lines.push('--- notes ---');
   for (const note of diag.notes) lines.push(note);
   lines.push('=== end ===');
@@ -66,6 +74,7 @@ export class AppController {
   }
 
   private mapResponse(parsed: ParsedResponse): PanelView {
+    trace('mapResponse', parsed.kind);
     if (parsed.kind === 'questions') {
       if (parsed.questions.length === 0 && parsed.status === 'ready') {
         return { kind: 'loading', message: 'Getting your 5 options…' };
@@ -106,6 +115,8 @@ export class AppController {
   }
 
   async submitRequest(text: string): Promise<void> {
+    traceReset();
+    trace('AppController.submitRequest', text.slice(0, 60));
     this.setView({ kind: 'loading', message: 'Asking your AI to help sharpen this…' });
     try {
       const parsed = await this.orchestrator.start(text);
@@ -115,16 +126,20 @@ export class AppController {
         await this.fetchOptions();
       }
     } catch (err) {
+      trace('AppController: caught error', err instanceof Error ? err.message : String(err));
       this.setView(this.errorView(err));
     }
   }
 
   async answerQuestions(answers: { question: string; answer: string }[]): Promise<void> {
+    traceReset();
+    trace('AppController.answerQuestions');
     try {
       for (const a of answers) this.orchestrator.recordAnswer(a.question, a.answer);
       this.setView({ kind: 'loading', message: 'Getting your 5 options…' });
       await this.fetchOptions();
     } catch (err) {
+      trace('AppController: caught error', err instanceof Error ? err.message : String(err));
       this.setView(this.errorView(err));
     }
   }
@@ -135,11 +150,14 @@ export class AppController {
   }
 
   async pickOption(finalPrompt: string): Promise<void> {
+    traceReset();
+    trace('AppController.pickOption');
     this.setView({ kind: 'loading', message: 'Sending your refined prompt…' });
     try {
       const answer = await this.orchestrator.finalize(finalPrompt);
       this.setView({ kind: 'done', finalAnswerPreview: answer.slice(0, 280) });
     } catch (err) {
+      trace('AppController: caught error', err instanceof Error ? err.message : String(err));
       this.setView(this.errorView(err));
     }
   }

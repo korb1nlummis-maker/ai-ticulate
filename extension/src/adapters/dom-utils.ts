@@ -1,3 +1,5 @@
+import { trace } from '../trace.js';
+
 /**
  * Structural heuristic to find the latest assistant response text when
  * specific selectors fail. Conversation UIs (ChatGPT, Claude, Gemini) render
@@ -109,6 +111,8 @@ export async function insertTextIntoEditable(el: HTMLElement, text: string): Pro
   const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
   const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
+  trace('insert: start', 'targetTag=' + el.tagName.toLowerCase());
+
   const MAX_ATTEMPTS = 6;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     el.focus();
@@ -120,13 +124,18 @@ export async function insertTextIntoEditable(el: HTMLElement, text: string): Pro
     } catch {
       execSupported = false; // e.g. the happy-dom test environment
     }
+    await tick(); // let the editor process the beforeinput + DOM mutation
+    trace(
+      'insert: attempt ' + (attempt + 1),
+      'execSupported=' + execSupported + ' landed=' + landed(),
+    );
     if (!execSupported) break; // no point retrying where execCommand doesn't exist
 
-    await tick(); // let the editor process the beforeinput + DOM mutation
     if (landed()) {
       el.dispatchEvent(
         new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
       );
+      trace('insert: done', 'result=true');
       return true;
     }
     await pause(120); // brief settle before the next attempt
@@ -141,5 +150,8 @@ export async function insertTextIntoEditable(el: HTMLElement, text: string): Pro
     new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }),
   );
   await tick();
-  return landed();
+  trace('insert: textContent fallback', 'landed=' + landed());
+  const result = landed();
+  trace('insert: done', 'result=' + result);
+  return result;
 }

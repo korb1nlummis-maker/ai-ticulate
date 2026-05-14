@@ -6,6 +6,7 @@ import {
   buildOptionsPrompt,
   buildFinalizePrompt,
 } from '../prompts/templates.js';
+import { trace } from '../trace.js';
 
 export type OrchestratorState =
   | 'idle'
@@ -31,10 +32,13 @@ export class Orchestrator {
 
   /** Begin: send the refine meta-prompt for the user's vague request. */
   async start(userRequest: string): Promise<ParsedResponse> {
+    trace('Orchestrator.start');
     this.tracker = new TaskTracker(userRequest);
     this._state = 'refining';
     const raw = await this.bridge.sendAndAwaitResponse(buildRefinePrompt(userRequest));
-    return parseResponse(raw);
+    const parsed = parseResponse(raw);
+    trace('Orchestrator.start: parsed', parsed.kind);
+    return parsed;
   }
 
   /** Record a user's answer to a clarifying question. */
@@ -45,18 +49,21 @@ export class Orchestrator {
 
   /** Ask the AI for the 5 detailed option prompts. */
   async requestOptions(): Promise<ParsedResponse> {
+    trace('Orchestrator.requestOptions');
     if (!this.tracker) throw new Error('Orchestrator: start() must be called first');
     const snap = this.tracker.snapshot();
     const raw = await this.bridge.sendAndAwaitResponse(
       buildOptionsPrompt({ goalSummary: snap.goalSummary, answers: snap.answers }),
     );
     const parsed = parseResponse(raw);
+    trace('Orchestrator.requestOptions: parsed', parsed.kind);
     this._state = 'presenting-options';
     return parsed;
   }
 
   /** Send the user's chosen final prompt and return the AI's real answer. */
   async finalize(chosenPrompt: string): Promise<string> {
+    trace('Orchestrator.finalize');
     this._state = 'finalizing';
     const answer = await this.bridge.sendAndAwaitResponse(buildFinalizePrompt(chosenPrompt));
     this._state = 'done';
