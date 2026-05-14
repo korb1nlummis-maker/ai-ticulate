@@ -32,6 +32,14 @@ The project owner course-corrected the architecture, hard and clearly:
 - `backend/` removed from the working tree. Fully recoverable from git history (it was merged to `main` at commit `5fd2269`) if any of it is ever needed.
 - Old superseded plan `docs/superpowers/plans/2026-05-13-backend-foundation.md` left in place as history.
 
+### Extension Task 1 complete — WXT scaffold
+
+- `extension/` initialized with WXT (Manifest V3 framework) + React + TypeScript + Vitest.
+- Host permissions scoped to chatgpt.com / claude.ai / gemini.google.com only.
+- Minimal content script logs a load marker; `pnpm build` produces a loadable unpacked extension.
+- Why WXT: it's the current best-maintained MV3 framework — auto-generates the manifest, handles cross-browser quirks, content-script registration, HMR. A build tool, not infrastructure — consistent with the project's zero-infra principle.
+- Commit: e6dd9ab
+
 ---
 
 ## 2026-05-14 — Backend Foundation execution wrap
