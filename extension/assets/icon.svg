@@ -1,24 +1,25 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#8b5cf6"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="55%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#c026d3"/>
     </linearGradient>
+    <radialGradient id="centerGlow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+    <radialGradient id="sparkleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(255,255,255,1)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.6)"/>
+    </radialGradient>
   </defs>
-  <!-- soft rounded-square background -->
-  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
-  <!-- main four-pointed sparkle -->
-  <path fill="#ffffff"
-        d="M300 96
-           C312 176 336 200 416 212
-           C336 224 312 248 300 328
-           C288 248 264 224 184 212
-           C264 200 288 176 300 96 Z"/>
-  <!-- smaller accent sparkle -->
-  <path fill="#ffffff" fill-opacity="0.92"
-        d="M168 280
-           C176 324 188 336 232 344
-           C188 352 176 364 168 408
-           C160 364 148 352 104 344
-           C148 336 160 324 168 280 Z"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#centerGlow)"/>
+  <!-- Main 4-point sparkle: slim elegant arms, centered -->
+  <path d="M256 76 L268 244 L436 256 L268 268 L256 436 L244 268 L76 256 L244 244 Z" fill="url(#sparkleGlow)"/>
+  <!-- Accent sparkle: smaller, upper-right -->
+  <path d="M392 116 L396 160 L440 164 L396 168 L392 212 L388 168 L344 164 L388 160 Z" fill="rgba(255,255,255,0.8)"/>
+  <!-- Tiny third sparkle: lower-left for balance -->
+  <circle cx="148" cy="392" r="6" fill="rgba(255,255,255,0.7)"/>
 </svg>

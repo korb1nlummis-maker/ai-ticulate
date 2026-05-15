@@ -10,6 +10,14 @@ export function RequestInput({ onSubmit }: RequestInputProps) {
     if (trimmed) onSubmit(trimmed);
   }
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Cmd/Ctrl + Enter submits — the meta key for Mac, ctrl for everyone else.
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }
+
   return (
     <div className="ait-request">
       <div className="ait-intro">
@@ -25,10 +33,15 @@ export function RequestInput({ onSubmit }: RequestInputProps) {
         aria-label="Your request"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
       />
-      <button className="ait-button ait-button-block" onClick={handleSubmit}>
+      <button
+        className="ait-button ait-button-primary ait-button-block"
+        onClick={handleSubmit}
+      >
         Help me ask this
       </button>
+      <div className="ait-helper">Press Cmd/Ctrl+Enter to submit.</div>
     </div>
   );
 }

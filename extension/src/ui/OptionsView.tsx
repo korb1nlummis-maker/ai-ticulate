@@ -55,18 +55,20 @@ type OptionsViewProps = {
 
 function OptionWithBlanks({
   option,
+  index,
   onPick,
 }: {
   option: string;
+  index: number;
   onPick: (finalPrompt: string) => void;
 }) {
   const { segments, blanks } = splitOnBlanks(option);
   const [values, setValues] = useState<string[]>(() => blanks.map(() => ''));
 
-  function setValue(index: number, value: string) {
+  function setValue(i: number, value: string) {
     setValues((prev) => {
       const next = [...prev];
-      next[index] = value;
+      next[i] = value;
       return next;
     });
   }
@@ -89,29 +91,34 @@ function OptionWithBlanks({
 
   return (
     <div className="ait-option">
-      <div className="ait-option-text">
-        {segments.map((seg, i) => (
-          <span key={i}>
-            {seg}
-            {i < segments.length - 1 && (
-              <input
-                className="ait-input"
-                value={values[i] ?? ''}
-                placeholder={placeholderForBlank(blanks[i] ?? '')}
-                aria-label="Fill in the blank"
-                onChange={(e) => setValue(i, e.target.value)}
-              />
-            )}
-          </span>
-        ))}
+      <span className="ait-option-number" aria-hidden="true">
+        {index + 1}
+      </span>
+      <div className="ait-option-body">
+        <div className="ait-option-text">
+          {segments.map((seg, i) => (
+            <span key={i}>
+              {seg}
+              {i < segments.length - 1 && (
+                <input
+                  className="ait-input"
+                  value={values[i] ?? ''}
+                  placeholder={placeholderForBlank(blanks[i] ?? '')}
+                  aria-label="Fill in the blank"
+                  onChange={(e) => setValue(i, e.target.value)}
+                />
+              )}
+            </span>
+          ))}
+        </div>
+        <button
+          className="ait-button ait-button-primary ait-button-small ait-button-block"
+          type="button"
+          onClick={handleUse}
+        >
+          Use this
+        </button>
       </div>
-      <button
-        className="ait-button ait-button-block"
-        type="button"
-        onClick={handleUse}
-      >
-        Use this
-      </button>
     </div>
   );
 }
@@ -124,7 +131,7 @@ export function OptionsView({ options, onPick }: OptionsViewProps) {
       </div>
       {options.map((option, i) =>
         hasBlanks(option) ? (
-          <OptionWithBlanks key={i} option={option} onPick={onPick} />
+          <OptionWithBlanks key={i} option={option} index={i} onPick={onPick} />
         ) : (
           <button
             key={i}
@@ -132,7 +139,12 @@ export function OptionsView({ options, onPick }: OptionsViewProps) {
             type="button"
             onClick={() => onPick(option)}
           >
-            <span className="ait-option-text">{option}</span>
+            <span className="ait-option-number" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span className="ait-option-body">
+              <span className="ait-option-text">{option}</span>
+            </span>
           </button>
         ),
       )}

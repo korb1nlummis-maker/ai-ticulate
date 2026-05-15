@@ -27,9 +27,13 @@ describe('Panel', () => {
         onClose={vi.fn()}
       />,
     );
-    const optionButtons = getAllByRole('button').filter((b) =>
-      ['A', 'B', 'C', 'D', 'E'].includes(b.textContent ?? ''),
-    );
+    // Each option button now carries an option-number badge prefix ("1", "2", …)
+    // in addition to the option text — so match on the text-content containing
+    // the option letter rather than equaling it exactly.
+    const optionButtons = getAllByRole('button').filter((b) => {
+      const text = (b.textContent ?? '').trim();
+      return /^[1-5][A-E]$/.test(text);
+    });
     expect(optionButtons).toHaveLength(5);
     optionButtons[2]!.click();
     expect(onPick).toHaveBeenCalledWith('C');

@@ -59,7 +59,10 @@ export function QuestionsView({ questions, onSubmit }: QuestionsViewProps) {
           />
         </div>
       ))}
-      <button className="ait-button ait-button-block" onClick={handleContinue}>
+      <button
+        className="ait-button ait-button-primary ait-button-block"
+        onClick={handleContinue}
+      >
         Continue
       </button>
     </div>
