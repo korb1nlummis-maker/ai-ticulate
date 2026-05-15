@@ -2,17 +2,39 @@
 
 A free browser extension that helps you craft better AI prompts inside your own AI chat (claude.ai, chatgpt.com, gemini.google.com). No accounts, no API keys, no cost.
 
-## 1. Unzip this file
+## One-liner install (Windows + Chrome/Edge/Brave)
+
+Open PowerShell and paste:
+
+```powershell
+irm https://raw.githubusercontent.com/korb1nlummis-maker/ai-ticulate/main/scripts/install.ps1 | iex
+```
+
+The installer downloads the latest release, unzips it, copies the path to your clipboard, and opens your browser's Extensions page. From there:
+
+1. Turn on **Developer mode** (top right)
+2. Click **Load unpacked**
+3. Press **Ctrl+L** then **Ctrl+V** in the folder picker to paste the path, then confirm
+
+Re-run the same command anytime to update to a newer release.
+
+You can read the script before running it: <https://github.com/korb1nlummis-maker/ai-ticulate/blob/main/scripts/install.ps1>
+
+## Manual install (any OS)
+
+If you'd rather do it by hand, or you're on Mac / Linux / Firefox:
+
+### 1. Unzip this file
 
 If you haven't already — right-click the ZIP you downloaded and pick "Extract All" (Windows) or just double-click (Mac). You'll end up with a folder.
 
-## 2. Open your browser's extensions page
+### 2. Open your browser's extensions page
 
 **Chrome / Edge / Brave / Arc:** type `chrome://extensions` into the address bar and press Enter.
 
 **Firefox:** type `about:debugging#/runtime/this-firefox` into the address bar and press Enter.
 
-## 3. Turn on Developer Mode (Chrome) or pick the file (Firefox)
+### 3. Turn on Developer Mode (Chrome) or pick the file (Firefox)
 
 **Chrome / Edge / Brave / Arc:**
 - Toggle "Developer mode" on (top right of the page)
@@ -27,7 +49,7 @@ If you haven't already — right-click the ZIP you downloaded and pick "Extract 
 
 > **Firefox note:** temporary add-ons stay loaded until you close Firefox. To make it permanent, you'd need to publish through Mozilla's Add-on store (or use Firefox Developer Edition with `xpinstall.signatures.required` disabled).
 
-## 4. Use it
+## Use it
 
 1. Go to **claude.ai**, **chatgpt.com**, or **gemini.google.com**
 2. You'll see a small sparkle ✨ button — click it

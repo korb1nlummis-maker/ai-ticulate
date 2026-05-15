@@ -17,11 +17,23 @@ You type a vague request ("build me a website"). ai-ticulate doesn't send that a
 
 ## Install (for users)
 
-**Just want to use it? Skip the source.** Grab the latest release — a single ~170 KB ZIP with the pre-built extension and a 4-step install guide inside.
+### Windows + Chrome/Edge/Brave — one-liner
 
-➡️ **[Download from Releases](https://github.com/korb1nlummis-maker/ai-ticulate/releases/latest)** — pick `ai-ticulate-chrome-*.zip` for Chrome/Edge/Brave/Arc, or `ai-ticulate-firefox-*.zip` for Firefox.
+Open PowerShell and paste:
 
-Full step-by-step install instructions are inside the ZIP as `INSTALL.md`, or you can read them at [`release-assets/INSTALL.md`](release-assets/INSTALL.md) before downloading.
+```powershell
+irm https://raw.githubusercontent.com/korb1nlummis-maker/ai-ticulate/main/scripts/install.ps1 | iex
+```
+
+That downloads the latest release, unzips it, copies the install path to your clipboard, and opens your browser's Extensions page. Click **Developer mode → Load unpacked → Ctrl+V** and you're done. Re-run the same command anytime to update.
+
+You can read the script before running it: [`scripts/install.ps1`](scripts/install.ps1).
+
+### Manual install (any OS / Firefox)
+
+Grab the latest release ZIP (~170 KB) and follow the 4-step guide inside:
+
+➡️ **[Download from Releases](https://github.com/korb1nlummis-maker/ai-ticulate/releases/latest)** — pick `ai-ticulate-chrome-*.zip` for Chromium browsers, or `ai-ticulate-firefox-*.zip` for Firefox. Full instructions at [`release-assets/INSTALL.md`](release-assets/INSTALL.md).
 
 ## Build from source (for developers)
 
