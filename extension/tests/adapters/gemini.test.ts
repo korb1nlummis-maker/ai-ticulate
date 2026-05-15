@@ -32,6 +32,19 @@ describe('GeminiAdapter', () => {
     expect(new GeminiAdapter().getLatestResponseText()).toContain('second assistant message');
   });
 
+  it('getLatestResponseText returns empty string when no response exists', () => {
+    document.querySelectorAll('model-response').forEach((el) => el.remove());
+    document.querySelectorAll('message-content').forEach((el) => el.remove());
+    document.querySelectorAll('.model-response-text').forEach((el) => el.remove());
+    expect(new GeminiAdapter().getLatestResponseText()).toBe('');
+  });
+
+  it('getCurrentInputText returns whatever is currently in the input', async () => {
+    const a = new GeminiAdapter();
+    await a.setInputValue('typed text');
+    expect(a.getCurrentInputText()).toContain('typed text');
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new GeminiAdapter().isResponseComplete()).toBe(true);
   });

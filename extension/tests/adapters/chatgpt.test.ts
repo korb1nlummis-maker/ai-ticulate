@@ -32,6 +32,19 @@ describe('ChatGPTAdapter', () => {
     expect(new ChatGPTAdapter().getLatestResponseText()).toContain('second assistant message');
   });
 
+  it('getLatestResponseText returns empty string when no response exists', () => {
+    document
+      .querySelectorAll('[data-message-author-role="assistant"]')
+      .forEach((el) => el.remove());
+    expect(new ChatGPTAdapter().getLatestResponseText()).toBe('');
+  });
+
+  it('getCurrentInputText returns whatever is currently in the input', async () => {
+    const a = new ChatGPTAdapter();
+    await a.setInputValue('typed text');
+    expect(a.getCurrentInputText()).toContain('typed text');
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new ChatGPTAdapter().isResponseComplete()).toBe(true);
   });

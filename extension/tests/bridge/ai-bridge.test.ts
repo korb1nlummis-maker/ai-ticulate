@@ -5,7 +5,7 @@ import { FakeAdapter } from '../../src/adapters/fake.js';
 describe('AIBridge.sendAndAwaitResponse', () => {
   it('sends the text and resolves with the completed response', async () => {
     const adapter = new FakeAdapter();
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1, sendFiredCheckMs: 0 });
 
     const promise = bridge.sendAndAwaitResponse('what is 2+2?');
     setTimeout(() => adapter.scriptResponse('thinking...', { complete: false }), 10);
@@ -18,14 +18,14 @@ describe('AIBridge.sendAndAwaitResponse', () => {
 
   it('rejects if the response never completes before the timeout', async () => {
     const adapter = new FakeAdapter();
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 50, sendDelayMs: 1 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 50, sendDelayMs: 1, sendFiredCheckMs: 0 });
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/timed out/i);
   });
 
   it('rejects if the adapter is not ready', async () => {
     const adapter = new FakeAdapter();
     adapter.setReady(false);
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 100, sendDelayMs: 1 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 100, sendDelayMs: 1, sendFiredCheckMs: 0 });
     await expect(bridge.sendAndAwaitResponse('q')).rejects.toThrow(/not ready/i);
   });
 
@@ -36,6 +36,7 @@ describe('AIBridge.sendAndAwaitResponse', () => {
       timeoutMs: 5000,
       emptyResponseGraceMs: 40,
       sendDelayMs: 1,
+      sendFiredCheckMs: 0,
     });
 
     const promise = bridge.sendAndAwaitResponse('q');
@@ -52,6 +53,7 @@ describe('AIBridge.sendAndAwaitResponse', () => {
       timeoutMs: 5000,
       emptyResponseGraceMs: 40,
       sendDelayMs: 1,
+      sendFiredCheckMs: 0,
     });
 
     const promise = bridge.sendAndAwaitResponse('please summarise this meeting note');
@@ -67,12 +69,34 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     await expect(promise).rejects.toThrow(/no readable response/i);
   });
 
+  it('rejects fast when the send did not fire (input still has our text)', async () => {
+    // Subclass FakeAdapter: clickSend records the send but does NOT clear
+    // the input — modelling the live-site failure mode where the host
+    // editor reverts our text before the send fires.
+    class StuckSendAdapter extends FakeAdapter {
+      override clickSend(): void {
+        this.sentMessages.push(this.inputValue);
+        // Intentionally do NOT clear inputValue — the send "didn't fire".
+      }
+    }
+    const adapter = new StuckSendAdapter();
+    const bridge = new AIBridge(adapter, {
+      pollIntervalMs: 5,
+      timeoutMs: 30_000,
+      sendDelayMs: 1,
+      sendFiredCheckMs: 20,
+    });
+    await expect(bridge.sendAndAwaitResponse('hello world from the test')).rejects.toThrow(
+      /did not send/i,
+    );
+  });
+
   it('does not resolve with a stale prior response left in the DOM', async () => {
     const adapter = new FakeAdapter();
     // Simulate a previous completed turn still visible in the DOM.
     adapter.scriptResponse('OLD stale response', { complete: true });
 
-    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1 });
+    const bridge = new AIBridge(adapter, { pollIntervalMs: 5, timeoutMs: 1000, sendDelayMs: 1, sendFiredCheckMs: 0 });
     const promise = bridge.sendAndAwaitResponse('a new question');
 
     // The new turn completes a bit later with fresh text.

@@ -21,6 +21,14 @@ export type AIBridgeOptions = {
    * editor the site still thinks is empty, and the message never sends.
    */
   sendDelayMs: number;
+  /**
+   * How long after `clickSend` to wait before checking that the input was
+   * actually cleared (i.e. the send fired). If the input still contains a
+   * substantial prefix of the text we tried to send at this point, the host
+   * site never actually submitted — reject fast with a clear error rather
+   * than waiting the full timeout. Set to 0 to skip the check.
+   */
+  sendFiredCheckMs: number;
 };
 
 const DEFAULT_OPTIONS: AIBridgeOptions = {
@@ -28,10 +36,15 @@ const DEFAULT_OPTIONS: AIBridgeOptions = {
   timeoutMs: 120_000,
   emptyResponseGraceMs: 8_000,
   sendDelayMs: 350,
+  sendFiredCheckMs: 1500,
 };
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function norm(s: string): string {
+  return s.replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -72,6 +85,25 @@ export class AIBridge {
     await delay(this.options.sendDelayMs);
     trace('AIBridge.send: clickSend');
     this.adapter.clickSend();
+
+    // Fast-fail: a short while after clickSend, if the input still has our
+    // text in it, the send didn't fire (the host site's editor likely
+    // reverted our text before the send, or the Enter/button didn't actually
+    // submit). Reject early with a clear error rather than waiting the full
+    // timeout.
+    if (this.options.sendFiredCheckMs > 0) {
+      await delay(this.options.sendFiredCheckMs);
+      const stillHasText = norm(this.adapter.getCurrentInputText()).includes(
+        norm(text).slice(0, 60),
+      );
+      if (stillHasText) {
+        trace('AIBridge.send: send did not fire — input still has our text');
+        throw new Error(
+          'AIBridge: the message did not send — the chat site may have rejected the input',
+        );
+      }
+      trace('AIBridge.send: send fired (input cleared)');
+    }
 
     // Remember what we sent so we never resolve with our own prompt echoed
     // back. The structural response-reading fallback can, on the first poll

@@ -181,6 +181,9 @@ function errorMessage(err: unknown): string {
   if (err instanceof Error && /could not type/i.test(err.message)) {
     return "Couldn't type into the chat box on this page. The site may have changed — try reloading the page.";
   }
+  if (err instanceof Error && /did not send/i.test(err.message)) {
+    return "Couldn't actually send the message — the chat site may have rejected the text. Try clicking your chat's send button manually after the prompt lands.";
+  }
   if (err instanceof Error && /timed out/i.test(err.message)) {
     return 'Your AI took too long to respond. Try again.';
   }

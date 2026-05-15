@@ -49,6 +49,9 @@ export interface SiteAdapter {
    */
   getLatestResponseText(): string;
 
+  /** The text currently in the input element (empty if nothing or input not found). */
+  getCurrentInputText(): string;
+
   /**
    * True if the latest assistant response has finished generating
    * (not still streaming). Adapters detect this via site-specific signals

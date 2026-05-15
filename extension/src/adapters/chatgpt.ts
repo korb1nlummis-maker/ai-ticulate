@@ -1,9 +1,5 @@
 import { AdapterDiagnostics, SiteAdapter } from './types.js';
-import {
-  findLatestMessageTextStructurally,
-  insertTextIntoEditable,
-  looksLikeNonSendButton,
-} from './dom-utils.js';
+import { insertTextIntoEditable, looksLikeNonSendButton } from './dom-utils.js';
 import {
   describeActiveElement,
   execInsertTextSupported,
@@ -142,9 +138,20 @@ export class ChatGPTAdapter implements SiteAdapter {
         if (text.length > 0) return via('via=' + sel + ' count=' + messages.length, text);
       }
     }
-    // Structural fallback — selectors didn't match the live DOM.
-    const structural = findLatestMessageTextStructurally();
-    return via(structural.length > 0 ? 'via=structural' : 'via=none', structural);
+    // No specific selector matched. Do NOT fall back to a structural scan —
+    // it would happily grab page chrome (footers, model-selector text) and
+    // hand the bridge a "false positive" non-empty response. Return '' and
+    // let the bridge's empty-response-grace handle the no-response-yet case.
+    return via('via=none', '');
+  }
+
+  getCurrentInputText(): string {
+    const input = this.findInput();
+    if (!input) return '';
+    if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
+      return input.value;
+    }
+    return input.textContent ?? '';
   }
 
   isResponseComplete(): boolean {

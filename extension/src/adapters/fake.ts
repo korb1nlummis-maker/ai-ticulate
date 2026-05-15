@@ -34,6 +34,10 @@ export class FakeAdapter implements SiteAdapter {
     return this.responseText;
   }
 
+  getCurrentInputText(): string {
+    return this.inputValue;
+  }
+
   isResponseComplete(): boolean {
     return this.complete;
   }

@@ -32,6 +32,18 @@ describe('ClaudeAdapter', () => {
     expect(new ClaudeAdapter().getLatestResponseText()).toContain('second assistant message');
   });
 
+  it('getLatestResponseText returns empty string when no response exists', () => {
+    document.querySelectorAll('.font-claude-response-body').forEach((el) => el.remove());
+    document.querySelectorAll('.font-claude-message').forEach((el) => el.remove());
+    expect(new ClaudeAdapter().getLatestResponseText()).toBe('');
+  });
+
+  it('getCurrentInputText returns whatever is currently in the input', async () => {
+    const a = new ClaudeAdapter();
+    await a.setInputValue('typed text');
+    expect(a.getCurrentInputText()).toContain('typed text');
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new ClaudeAdapter().isResponseComplete()).toBe(true);
   });
