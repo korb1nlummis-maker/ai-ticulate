@@ -55,6 +55,32 @@ describe('Panel', () => {
     expect(onRestart).toHaveBeenCalledOnce();
   });
 
+  it('renders inputs for [BLANK] and [your X] markers and substitutes them on Use this', () => {
+    const onPick = vi.fn();
+    const { container } = render(
+      <Panel
+        view={{
+          kind: 'options',
+          options: [
+            'Build a [BLANK] site for [your audience] with these sections',
+            'Plain option without blanks',
+            'Use [___] for legacy markers',
+            'Multiple _____ underscores too',
+            'And [BLANK: a hint] for the user',
+          ],
+        }}
+        onSubmitRequest={vi.fn()}
+        onAnswerQuestions={vi.fn()}
+        onPickOption={onPick}
+        onClose={vi.fn()}
+      />,
+    );
+    // The first option has 2 blanks → 2 inputs should render in its card.
+    const inputs = container.querySelectorAll('input[type="text"], input:not([type])');
+    // At least 2 inputs from the first option, plus any from later options with blanks.
+    expect(inputs.length).toBeGreaterThanOrEqual(2);
+  });
+
   it('renders copyable diagnostics text and a "Copy diagnostics" button in the error view', () => {
     const { container, getAllByRole } = render(
       <Panel

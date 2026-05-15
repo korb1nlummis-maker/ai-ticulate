@@ -27,4 +27,11 @@ describe('meta-prompt templates', () => {
     const chosen = 'Design a minimal portfolio site for a wedding photographer...';
     expect(buildFinalizePrompt(chosen)).toContain('Design a minimal portfolio site');
   });
+
+  it('buildFinalizePrompt prefixes a directive so the AI answers directly', () => {
+    const p = buildFinalizePrompt('Build a portfolio site');
+    expect(p).toContain('Build a portfolio site');
+    expect(p.toLowerCase()).toContain('directly');
+    expect(p.toLowerCase()).toContain('do not restate');
+  });
 });

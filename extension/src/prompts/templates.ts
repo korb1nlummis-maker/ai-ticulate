@@ -53,7 +53,7 @@ export function buildOptionsPrompt(input: {
 
 ${answersBlock}
 
-Now give me 5 distinct, detailed prompt options I could send you to get a great result. Each option should be a complete, ready-to-send prompt — more specific and richer than my original request. Make the 5 genuinely different in angle, not the same prompt at 5 lengths. Where a useful detail could be personalized, leave a blank like [___].
+Now give me 5 distinct, detailed prompt options I could send you to get a great result. Each option should be a complete, ready-to-send prompt — more specific and richer than my original request. Make the 5 genuinely different in angle, not the same prompt at 5 lengths. Where a useful detail could be personalized, leave a blank like [BLANK] (or [BLANK: short hint] when the hint helps me know what to fill in).
 
 Format your reply using these EXACT plain-text marker lines — write them as
 ordinary text, NOT as markdown headers, NOT bold, no "#" characters, no
@@ -71,21 +71,13 @@ OPTION 5
 Do not output anything else. Do not use markdown headers (#).`;
 }
 
-/**
- * The finalize step. Intentionally an identity function — and it stays one.
- *
- * By the time we reach this step the user has picked one of the 5 options
- * produced by `buildOptionsPrompt`. Each option was generated as "a complete,
- * ready-to-send prompt"; the user may also have edited it. That text IS the
- * prompt the user wants to send. ai-ticulate's job here is to get out of the
- * way: wrapping, prefixing, or reformatting it would mangle the user's
- * carefully chosen prompt and change the result they get from their AI.
- *
- * This function is kept (rather than inlined) deliberately: it's the named
- * contract point that says "this is the step where the chosen prompt goes
- * through untouched." If a future change ever needs to transform the
- * finalize-stage prompt, this is the single place to do it.
- */
 export function buildFinalizePrompt(chosenPrompt: string): string {
-  return chosenPrompt;
+  // The chosen option is already a complete, ready-to-send prompt. We prefix
+  // a brief directive because some chat models (notably ChatGPT) otherwise
+  // preamble by restating or comparing against the previous options I'd been
+  // shown — which is conversational fluff, not what the user picked an option
+  // for. This keeps the actual answer/build front-and-center.
+  return `Please answer this request directly. Do not restate the options I previously considered, do not compare to alternatives, and do not preface with summaries — just deliver the answer/result for this specific request:
+
+${chosenPrompt}`;
 }
