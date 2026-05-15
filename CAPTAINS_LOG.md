@@ -12,6 +12,18 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ## 2026-05-14 — ai-ticulate v1 — finished product
 
+### Live-test fix #14 — bridge resolution uses message-count signal, not string diff
+
+Live test on chatgpt.com: the user got all the way through the refinement flow → picked one of the 5 options → finalize. ChatGPT actually responded with a new assistant message (the trace showed text growing from 305 → 3431 chars). But the bridge rejected with "no readable response" because the new message's text settled at exactly 3431 chars — the same length as the baseline, and either by coincidence or near-coincidence the strings matched. The bridge's `responseText !== baseline` check returned false → rejection.
+
+**Fix:** the bridge now uses a count-based signal to detect new turns. New `SiteAdapter.getResponseSignal()` returns a count that increments per assistant turn (assistant-message count for ChatGPT/Gemini, user-message count for Claude as a 1:1 proxy). The bridge's resolution condition becomes `isComplete && newTurnExists && text.length > 0 && !echo` — robust against identical regenerations, same-length coincidences, and any other string-based gotcha.
+
+Also: the empty-response-grace logic now only fires AFTER a new turn has been detected, so "no response came yet" doesn't trigger an early empty-grace rejection.
+
+103 tests passing.
+
+Commit: 15f80b8
+
 ### Live-test fix #13 — ChatGPT: drop garbage-grabbing structural fallback + fast-fail when send doesn't fire
 
 End-to-end works on claude.ai now. Live test on chatgpt.com revealed two issues — both technical (not free-tier related):
