@@ -128,6 +128,50 @@ Fifth option text [___]`;
     }
   });
 
+  it('parses inline marker+content lines (Claude format)', () => {
+    const raw = `QUESTION What is the website for?
+SUGGESTIONS
+Personal portfolio
+Landing page
+QUESTION What tech approach do you want?
+SUGGESTIONS
+Vanilla HTML
+React
+STATUS need-more`;
+    const result = parseResponse(raw);
+    expect(result.kind).toBe('questions');
+    if (result.kind === 'questions') {
+      expect(result.questions).toHaveLength(2);
+      expect(result.questions[0]!.question).toBe('What is the website for?');
+      expect(result.questions[0]!.suggestions).toEqual(['Personal portfolio', 'Landing page']);
+      expect(result.questions[1]!.question).toBe('What tech approach do you want?');
+      expect(result.status).toBe('need-more');
+    }
+  });
+
+  it('parses STATUS with inline value', () => {
+    const result = parseResponse('STATUS ready');
+    expect(result.kind).toBe('questions');
+    if (result.kind === 'questions') {
+      expect(result.status).toBe('ready');
+    }
+  });
+
+  it('parses OPTION n with inline text on the same line', () => {
+    const raw = `OPTION 1 Build a minimal portfolio site for a wedding photographer with [___] sections
+OPTION 2 Build a developer showcase with project cards and a contact form
+OPTION 3 Build a landing page for a SaaS product with a hero, features, and pricing
+OPTION 4 Build a blog with markdown posts and tag filtering
+OPTION 5 Build a single-page artifact with embedded interactive demos for [___]`;
+    const result = parseResponse(raw);
+    expect(result.kind).toBe('options');
+    if (result.kind === 'options') {
+      expect(result.options).toHaveLength(5);
+      expect(result.options[0]).toContain('wedding photographer');
+      expect(result.options[4]).toContain('[___]');
+    }
+  });
+
   it('handles multi-line option bodies', () => {
     const raw = `### OPTION 1
 line one

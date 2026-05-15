@@ -30,6 +30,35 @@ function classify(line: string): MarkerType {
 }
 
 /**
+ * Normalize marker lines: if a line begins with a marker (QUESTION,
+ * SUGGESTIONS, STATUS, OPTION n) and has content on the same line, split it
+ * into two lines — marker alone, then the rest as content. Claude on claude.ai
+ * frequently emits "QUESTION What is the website for?" inline; this makes the
+ * line-by-line scanner work with that form as well as the explicit two-line
+ * form.
+ */
+function normalizeMarkerLines(raw: string): string {
+  const lines = raw.split(/\r?\n/);
+  const out: string[] = [];
+  // Match: optional leading #s, the marker word(s), then a separator (whitespace,
+  // colon, dash), then the inline content (captured).
+  const splitRe =
+    /^(\s*#{0,6}\s*(?:QUESTION|SUGGESTIONS|STATUS|OPTION\s*\d+))[:\s\-.—–]+(.+)$/i;
+  for (const line of lines) {
+    const m = line.match(splitRe);
+    if (m && m[2] !== undefined) {
+      // Push the marker portion alone, then the inline content as its own line.
+      // Trim the marker so classify()'s regex anchors hit cleanly.
+      out.push(m[1]!.trim());
+      out.push(m[2]!);
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join('\n');
+}
+
+/**
  * Parse the AI's raw reply text into structured data. The AI was instructed
  * (by the meta-prompt templates) to use plain-text QUESTION / SUGGESTIONS /
  * OPTION n / STATUS marker lines. `classify()` also tolerates an optional
@@ -38,7 +67,8 @@ function classify(line: string): MarkerType {
  * sometimes add a greeting.
  */
 export function parseResponse(raw: string): ParsedResponse {
-  const lines = raw.split(/\r?\n/);
+  const normalized = normalizeMarkerLines(raw);
+  const lines = normalized.split(/\r?\n/);
   const markers = lines.map(classify);
 
   const hasOptions = markers.some((m) => m === 'option');
