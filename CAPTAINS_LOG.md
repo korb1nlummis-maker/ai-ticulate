@@ -12,6 +12,19 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ## 2026-05-14 — ai-ticulate v1 — finished product
 
+### Live-test fix #13 — ChatGPT: drop garbage-grabbing structural fallback + fast-fail when send doesn't fire
+
+End-to-end works on claude.ai now. Live test on chatgpt.com revealed two issues — both technical (not free-tier related):
+
+1. **`getLatestResponseText` was grabbing the page footer.** Its structural-fallback heuristic, intended as a safety net for unknown DOM, would happily return any substantial text on the page when specific selectors found nothing — including the "ChatGPT can make mistakes" footer. That gave the bridge a "false positive": text changed from baseline + non-empty → resolve with garbage → parser kind=unknown → error. **Fix:** dropped the structural fallback from the adapters' `getLatestResponseText`. They now return `''` when no real assistant message exists, and the bridge waits properly (or hits empty-response-grace).
+2. **No fast-fail when send didn't fire.** ChatGPT's editor reverted the textContent fallback before the send fired, so the message never reached the server. Without fix #1, the bridge resolved with garbage in 2s; WITH fix #1 alone, the bridge would have waited the full 120s timeout. **Added a fast-fail:** 1.5s after `clickSend`, if the input still contains a substantial prefix of the text we tried to send, throw a clear "the message did not send" error. New SiteAdapter method `getCurrentInputText()` powers the check; `errorMessage` maps the new error to a user-friendly message.
+
+This doesn't fix ChatGPT's editor-revert problem itself — that's the next thing to address if the diagnostic confirms the send is failing because of text-revert. But it converts a confusing "unknown parse" failure into a clear, actionable diagnostic in ~1.5s instead of 120s.
+
+93 tests passing.
+
+Commit: 7704ace
+
 ### Live-test fix #12 — parser handles Claude's inline marker format
 
 End-to-end now works: text lands in Claude's editor, message sends, Claude responds, and the extension reads the response. The last bug was in the parser: Claude on claude.ai emits `QUESTION What is the website for?` inline (marker and content on the same line), but the parser's `classify()` requires markers on their own line (`/^...QUESTION\s*$/i`). So no marker lines were detected → `parseResponse` returned `unknown` → error.
