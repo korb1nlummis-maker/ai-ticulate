@@ -10,6 +10,18 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-15 — v0.1.1: keystroke isolation + dark-mode primary button
+
+Two user-reported bugs from v0.1.0 after the shadow DOM landed:
+
+1. **"Every time i type it just pushes to the ai."** Keyboard events from inside the shadow root were bubbling out into the host page; claude.ai / chatgpt.com's ProseMirror editor listens at document level and was treating every keystroke in our textarea as input to *its* own chat box.
+   **Fix:** `createShadowRootUi(ctx, { ..., isolateEvents: true })`. WXT's `isolateEvents` calls `event.stopPropagation()` on `keyup` / `keydown` / `keypress` at the shadow boundary. Mouse clicks still propagate normally — only key events get stopped, which is exactly the surface ProseMirror's keymap listens on.
+
+2. **"The click button is still dark colored."** The dark-mode CSS block had `.ait-button { background: var(--ait-surface-sunken); }` (the generic dark-button rule), and only overrode `color: #0f0f14;` on `.ait-button-primary` — never restored the gradient. So in dark OS mode the primary button got the generic dark-gray background and looked flat instead of vibrant.
+   **Fix:** in the dark-mode block, `.ait-button-primary` now explicitly restores `background: linear-gradient(135deg, var(--ait-accent), var(--ait-accent-2))` and `border-color: transparent`. The dark-mode accent vars (`#818cf8` indigo, `#c084fc` purple) are lighter pastels, so dark text on top reads well.
+
+`package.json` bumped to `0.1.1`. 105 tests still pass; both Chrome MV3 and Firefox MV2 build. New release ZIPs (~168 KB each) attached to the v0.1.1 GitHub Release; the `/releases/latest` URL continues to work.
+
 ## 2026-05-15 — live-test fix #16: shadow DOM isolation
 
 User reported: "i cant read the text in the help me ask this bar" — the textarea text was unreadable on the live AI site.

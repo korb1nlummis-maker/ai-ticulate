@@ -25,6 +25,12 @@ export default defineContentScript({
       position: 'inline',
       anchor: 'body',
       append: 'last',
+      // Stop keystrokes inside the panel from bubbling out to the host
+      // page. Without this, claude.ai / chatgpt.com's ProseMirror editor
+      // listens at document level and treats every key as input to ITS
+      // own chat box — every character the user types into our request
+      // textarea also gets typed into the AI's input.
+      isolateEvents: true,
       onMount: (container) => {
         const bridge = new AIBridge(adapter);
         return mountApp(bridge, container, settings);

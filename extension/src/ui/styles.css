@@ -763,7 +763,9 @@
 
   .ait-button-primary,
   .ait-button-primary:hover {
+    background: linear-gradient(135deg, var(--ait-accent), var(--ait-accent-2));
     color: #0f0f14;
+    border-color: transparent;
   }
 
   .ait-button-secondary {
