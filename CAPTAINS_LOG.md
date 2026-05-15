@@ -12,6 +12,18 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ## 2026-05-14 — ai-ticulate v1 — finished product
 
+### Live-test fix #12 — parser handles Claude's inline marker format
+
+End-to-end now works: text lands in Claude's editor, message sends, Claude responds, and the extension reads the response. The last bug was in the parser: Claude on claude.ai emits `QUESTION What is the website for?` inline (marker and content on the same line), but the parser's `classify()` requires markers on their own line (`/^...QUESTION\s*$/i`). So no marker lines were detected → `parseResponse` returned `unknown` → error.
+
+**Fix:** added `normalizeMarkerLines()` — a small preprocessing step that detects a line beginning with a marker word and having content after it, and splits that into two lines (marker, then content). The existing line-by-line scanner handles both inline and two-line forms now. Also handles separators like `:` and dashes between marker and content. Three new parser tests cover Claude's actual format.
+
+This was the final blocker. The whole loop now runs end-to-end on live claude.ai.
+
+86 tests passing.
+
+Commit: 3b6f36a
+
 ### Polish pass merged — v1 is a finished product
 
 The `feat/polish` branch (icons + manifest, adapter hardening + engine follow-ups, UX/CSS polish) is merged to `main`. Tests verified green on the merged result: **60 passing**. Branch deleted; `origin/main` up to date.
