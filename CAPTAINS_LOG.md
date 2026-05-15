@@ -12,6 +12,17 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ## 2026-05-14 — ai-ticulate v1 — finished product
 
+### Live-test fix #15 — finalize directive + robust blank-fill patterns
+
+Two user-reported product issues from live testing:
+
+1. **ChatGPT preambled with unselected options on finalize.** The chosen option text was sent bare; ChatGPT (more conversational than Claude) responded with "going with option 3 — unlike 1, 2, 4, 5..." before getting to the actual work. **Fix:** `buildFinalizePrompt` now prepends a brief directive — *"answer this request directly. Do not restate the options I previously considered..."* — so the model just delivers the result.
+2. **Some `[___]` blanks couldn't be filled in.** AI doesn't always use `[___]` literally — sometimes it's `_____`, `[BLANK]`, `[your name]`, `[insert X]`. And markdown rendering can transform underscores. **Fix:** the meta-prompt now standardizes on `[BLANK]` (or `[BLANK: hint]`) as the canonical markdown-safe blank marker. `OptionsView`'s blank detection became a regex matching ALL common patterns (`[BLANK]`, `[BLANK: hint]`, `[___]`, `____`, `[your X]`, `[insert X]`, `[fill in X]`, `[choose X]`, `[enter X]`, `[something X]`). Input placeholders show extracted hints when available.
+
+105 tests passing.
+
+Commit: e51bacc
+
 ### Live-test fix #14 — bridge resolution uses message-count signal, not string diff
 
 Live test on chatgpt.com: the user got all the way through the refinement flow → picked one of the 5 options → finalize. ChatGPT actually responded with a new assistant message (the trace showed text growing from 305 → 3431 chars). But the bridge rejected with "no readable response" because the new message's text settled at exactly 3431 chars — the same length as the baseline, and either by coincidence or near-coincidence the strings matched. The bridge's `responseText !== baseline` check returned false → rejection.
