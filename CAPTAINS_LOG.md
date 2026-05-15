@@ -23,6 +23,17 @@ Two user-reported product issues from live testing:
 
 Commit: e51bacc
 
+### Polish revamp — logo refresh, UI revamp, "Start over" on done
+
+Two user-reported polish needs after live testing both Claude (working) and ChatGPT (working through to finalize):
+
+1. **"Start over" wasn't reachable from the `done` state** — only from `error`. Fixed so `done` and `error` both render the "Start over" primary button that calls `AppController.reset()` → orchestrator reset → back to idle/request-input.
+2. **Logo and UI revamp.** Logo: refined sparkle SVG with slimmer elegant arms, a deeper indigo→violet→fuchsia gradient, a center glow, and an accent sparkle for balance. UI: design tokens (CSS custom properties for accent/surface/text/radius/shadow), refined typography (system-ui stack), depth via soft shadows, smoother transitions, a slide-in animation when the panel opens, a real header with the inline sparkle icon next to the "ai-ticulate" label, primary/secondary button variants with hover-lift, polished `.ait-option` cards with numbered badges, `.ait-chip` pill states with `aria-pressed`, a celebratory done state with a green checkmark, a calm muted-amber error state, comprehensive `prefers-color-scheme: dark`, and a defensive scoped reset so host-page CSS can't bleed in.
+
+105 tests passing.
+
+Commit: 484a4cb
+
 ### Live-test fix #14 — bridge resolution uses message-count signal, not string diff
 
 Live test on chatgpt.com: the user got all the way through the refinement flow → picked one of the 5 options → finalize. ChatGPT actually responded with a new assistant message (the trace showed text growing from 305 → 3431 chars). But the bridge rejected with "no readable response" because the new message's text settled at exactly 3431 chars — the same length as the baseline, and either by coincidence or near-coincidence the strings matched. The bridge's `responseText !== baseline` check returned false → rejection.
