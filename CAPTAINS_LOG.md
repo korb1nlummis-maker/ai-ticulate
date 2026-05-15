@@ -10,6 +10,23 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-15 — live-test fix #16: shadow DOM isolation
+
+User reported: "i cant read the text in the help me ask this bar" — the textarea text was unreadable on the live AI site.
+
+**Root cause:** The panel mounted directly into `document.body` via a plain `<div>`. No shadow DOM. Our CSS used a defensive class-prefixed reset (`.ait-panel *`) but did NOT reset `color` — so the host page's CSS (claude.ai / chatgpt.com both use aggressive global selectors on form elements) bled in and recolored our textarea text against an effectively-matching background. Inheritable properties like `color` pierce ordinary DOM scoping; only a shadow boundary truly stops them.
+
+**Fix:** moved the entire UI mount under a shadow root via WXT's `createShadowRootUi`:
+
+- Set `cssInjectionMode: 'ui'` on the content script — WXT now bundles `styles.css` as a runtime-fetched resource attached to the shadow root, not auto-injected into the host page's `<head>`.
+- Replaced the manual `document.createElement('div') + document.body.appendChild + mountApp` flow with `createShadowRootUi(ctx, { name: 'ai-ticulate-ui', position: 'inline', anchor: 'body', append: 'last', onMount: container => mountApp(bridge, container, settings) })`.
+- WXT's default behavior adds `all: initial` to the shadow root *before* our CSS, neutralizing all inheritable host CSS in one stroke. CSS variables, `rem` units, and `@font-face` definitions defined outside the shadow still work — only the bleed gets killed.
+- Manifest changed shape as a consequence: the panel CSS moved from `content_scripts[0].css` (auto-injected into host) to `web_accessible_resources` with `use_dynamic_url: true` (fetched at runtime by our content script for the shadow root). Structural confirmation that the isolation is real.
+
+All 105 tests still pass. Typecheck clean. Bridge/adapters unchanged — they still query the *host page's* `document` to find the AI's input box, since the shadow root only isolates *our* UI, not our DOM-reading code.
+
+This also retires the playing-whack-a-mole approach the prior defensive reset was attempting. Future host-page CSS redesigns on claude.ai / chatgpt.com / gemini.google.com can no longer affect the panel's appearance.
+
 ## 2026-05-14 — ai-ticulate v1 — finished product
 
 ### Live-test fix #15 — finalize directive + robust blank-fill patterns

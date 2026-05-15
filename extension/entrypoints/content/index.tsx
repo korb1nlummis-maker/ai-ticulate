@@ -9,17 +9,32 @@ export default defineContentScript({
     'https://claude.ai/*',
     'https://gemini.google.com/*',
   ],
-  async main() {
+  // Bundle the panel's CSS with this UI so it can be attached to a shadow
+  // root instead of leaking into the host page's <head>. This is the partner
+  // setting to createShadowRootUi below.
+  cssInjectionMode: 'ui',
+  async main(ctx) {
     const adapter = pickAdapter(location.hostname);
     if (!adapter) {
       return;
     }
-    // getSettings() can fail in odd environments; fall back to defaults.
     const settings = await getSettings().catch(() => undefined);
-    const host = document.createElement('div');
-    host.id = 'ai-ticulate-root';
-    document.body.appendChild(host);
-    const bridge = new AIBridge(adapter);
-    mountApp(bridge, host, settings);
+
+    const ui = await createShadowRootUi(ctx, {
+      name: 'ai-ticulate-ui',
+      position: 'inline',
+      anchor: 'body',
+      append: 'last',
+      onMount: (container) => {
+        const bridge = new AIBridge(adapter);
+        return mountApp(bridge, container, settings);
+      },
+      onRemove: (controller) => {
+        // mountApp's controller exposes no explicit teardown today; the
+        // shadow host being removed from the DOM disconnects React.
+        void controller;
+      },
+    });
+    ui.mount();
   },
 });
