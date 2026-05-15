@@ -59,11 +59,10 @@ export class ChatGPTAdapter implements SiteAdapter {
   }
 
   isReady(): boolean {
-    // A send button that exists but is `disabled` (e.g. empty input) still
-    // means the chat UI is fully present and ready to be driven — we will
-    // populate the input ourselves before clicking, which enables it. So we
-    // only require that the elements exist, not that the button is enabled.
-    return this.findInput() !== null && this.findSendButton() !== null;
+    // Only the input must exist. The send button is intentionally NOT required:
+    // these sites only render it once the input has text, and our flow starts
+    // with an empty input. The Enter-key send works without the button anyway.
+    return this.findInput() !== null;
   }
 
   async setInputValue(text: string): Promise<void> {

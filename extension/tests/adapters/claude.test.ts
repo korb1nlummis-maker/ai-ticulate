@@ -16,6 +16,11 @@ describe('ClaudeAdapter', () => {
     expect(new ClaudeAdapter().isReady()).toBe(false);
   });
 
+  it('isReady() is true even when the send button is absent (empty input state)', () => {
+    document.querySelector('button[aria-label*="Send" i]')?.remove();
+    expect(new ClaudeAdapter().isReady()).toBe(true);
+  });
+
   it('setInputValue writes into the input element', async () => {
     const a = new ClaudeAdapter();
     await a.setInputValue('hello from ai-ticulate');

@@ -16,6 +16,11 @@ describe('ChatGPTAdapter', () => {
     expect(new ChatGPTAdapter().isReady()).toBe(false);
   });
 
+  it('isReady() is true even when the send button is absent (empty input state)', () => {
+    document.querySelector('[data-testid="send-button"]')?.remove();
+    expect(new ChatGPTAdapter().isReady()).toBe(true);
+  });
+
   it('setInputValue writes into the input element', async () => {
     const a = new ChatGPTAdapter();
     await a.setInputValue('hello from ai-ticulate');
