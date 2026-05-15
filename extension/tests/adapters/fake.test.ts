@@ -31,4 +31,32 @@ describe('FakeAdapter', () => {
     expect(a.getLatestResponseText()).toBe('the answer');
     expect(a.isResponseComplete()).toBe(true);
   });
+
+  it('getResponseSignal starts at 0 and increments on each completed turn', () => {
+    const a = new FakeAdapter();
+    expect(a.getResponseSignal()).toBe(0);
+    a.scriptResponse('first', { complete: true });
+    expect(a.getResponseSignal()).toBe(1);
+    a.scriptResponse('second', { complete: true });
+    expect(a.getResponseSignal()).toBe(2);
+  });
+
+  it('getResponseSignal increments even when the new turn text equals the previous turn text', () => {
+    // This is the same-length-as-baseline case that motivated the
+    // signal-based bridge resolution: two identical responses must still be
+    // detected as two distinct turns.
+    const a = new FakeAdapter();
+    a.scriptResponse('IDENTICAL', { complete: true });
+    a.scriptResponse('IDENTICAL', { complete: true });
+    expect(a.getResponseSignal()).toBe(2);
+  });
+
+  it('getResponseSignal does not increment for streaming (complete:false) updates', () => {
+    const a = new FakeAdapter();
+    a.scriptResponse('thinking...', { complete: false });
+    a.scriptResponse('still thinking...', { complete: false });
+    expect(a.getResponseSignal()).toBe(0);
+    a.scriptResponse('done', { complete: true });
+    expect(a.getResponseSignal()).toBe(1);
+  });
 });

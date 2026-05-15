@@ -45,6 +45,20 @@ describe('GeminiAdapter', () => {
     expect(a.getCurrentInputText()).toContain('typed text');
   });
 
+  it('getResponseSignal counts model response blocks', () => {
+    // Fixture contains 2 message-content elements.
+    expect(new GeminiAdapter().getResponseSignal()).toBe(2);
+  });
+
+  it('getResponseSignal increments when a new model response block appears', () => {
+    const a = new GeminiAdapter();
+    const before = a.getResponseSignal();
+    const next = document.createElement('message-content');
+    next.textContent = 'a fresh model response';
+    document.body.appendChild(next);
+    expect(a.getResponseSignal()).toBe(before + 1);
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new GeminiAdapter().isResponseComplete()).toBe(true);
   });

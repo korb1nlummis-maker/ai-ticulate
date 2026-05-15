@@ -44,6 +44,21 @@ describe('ClaudeAdapter', () => {
     expect(a.getCurrentInputText()).toContain('typed text');
   });
 
+  it('getResponseSignal counts user messages as a proxy for assistant turns', () => {
+    // Fixture contains 2 user messages — Claude's assistant turn count matches.
+    expect(new ClaudeAdapter().getResponseSignal()).toBe(2);
+  });
+
+  it('getResponseSignal increments when a new user message is added', () => {
+    const a = new ClaudeAdapter();
+    const before = a.getResponseSignal();
+    const next = document.createElement('div');
+    next.setAttribute('data-testid', 'user-message');
+    next.textContent = 'a fresh user prompt';
+    document.body.appendChild(next);
+    expect(a.getResponseSignal()).toBe(before + 1);
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new ClaudeAdapter().isResponseComplete()).toBe(true);
   });

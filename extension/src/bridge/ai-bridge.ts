@@ -69,12 +69,13 @@ export class AIBridge {
       throw new Error(`AIBridge: adapter "${this.adapter.name}" is not ready`);
     }
 
-    // Capture the current (previous turn's) response BEFORE sending. On a real
-    // site the prior assistant message stays in the DOM and the stop-generating
-    // control hasn't appeared yet, so without this baseline the first poll would
-    // resolve with the stale previous response.
-    const baseline = this.adapter.getLatestResponseText();
-    trace('AIBridge.send: baseline captured', 'len=' + baseline.length);
+    // Capture the response-count baseline BEFORE sending. A new response is
+    // signalled by this count going up — not by the response text differing,
+    // which fails when a new response happens to match a previous one (e.g.
+    // an identical regeneration, or two messages that settle at the same
+    // byte-exact text by coincidence).
+    const baselineSignal = this.adapter.getResponseSignal();
+    trace('AIBridge.send: baseline captured', `signal=${baselineSignal}`);
 
     trace('AIBridge.send: setInputValue start');
     await this.adapter.setInputValue(text);
@@ -112,9 +113,10 @@ export class AIBridge {
     const sentText = text;
 
     const startedAt = Date.now();
-    // Timestamp of the first poll where the adapter reported complete but had
-    // no new readable text. Reset to null whenever that condition isn't met,
-    // so only a *continuous* window of complete-but-empty triggers early exit.
+    // Timestamp of the first poll where the adapter reported complete + a new
+    // turn but had no readable text. Reset to null whenever that condition
+    // isn't met, so only a *continuous* window of complete-but-empty triggers
+    // early exit.
     let completeButEmptySince: number | null = null;
     let pollCount = 0;
     return new Promise<string>((resolve, reject) => {
@@ -126,29 +128,31 @@ export class AIBridge {
           return;
         }
         const isComplete = this.adapter.isResponseComplete();
-        if (isComplete) {
-          const responseText = this.adapter.getLatestResponseText();
-          const changedFromBaseline = responseText !== baseline;
-          const tracePoll = (label: string): void => {
-            trace(
-              label,
-              `attempt=${pollCount} isComplete=${isComplete} textLen=${responseText.length} changedFromBaseline=${changedFromBaseline}`,
-            );
-          };
-          if (
-            responseText.length > 0 &&
-            changedFromBaseline &&
-            !this.looksLikeEcho(responseText, sentText)
-          ) {
-            // Happy path: complete with fresh, readable text.
-            tracePoll('AIBridge.send: poll');
-            trace('AIBridge.send: RESOLVED', 'textLen=' + responseText.length);
-            resolve(responseText);
-            return;
-          }
-          // Complete, but nothing new/readable yet. Start (or continue) the
-          // grace timer; if this state persists, the AI almost certainly
-          // finished but produced nothing we can read.
+        const currentSignal = this.adapter.getResponseSignal();
+        const responseText = this.adapter.getLatestResponseText();
+        const newTurnExists = currentSignal > baselineSignal;
+        const isEcho = this.looksLikeEcho(responseText, sentText);
+        const tracePoll = (label: string): void => {
+          trace(
+            label,
+            `attempt=${pollCount} isComplete=${isComplete} sig=${currentSignal}/${baselineSignal} newTurn=${newTurnExists} textLen=${responseText.length}`,
+          );
+        };
+
+        if (isComplete && newTurnExists && responseText.length > 0 && !isEcho) {
+          // Happy path: complete, a new turn exists, and we can read it.
+          tracePoll('AIBridge.send: poll');
+          trace('AIBridge.send: RESOLVED', 'textLen=' + responseText.length);
+          resolve(responseText);
+          return;
+        }
+
+        // Empty-response-grace: only triggers AFTER a new turn has been
+        // detected. If no new turn has appeared yet, keep waiting — the AI
+        // just hasn't replied yet. Without this, a fast-completing site
+        // (isResponseComplete=true before any new turn renders) would
+        // trigger the empty-grace clock and reject prematurely.
+        if (isComplete && newTurnExists && (responseText.length === 0 || isEcho)) {
           completeButEmptySince ??= Date.now();
           if (Date.now() - completeButEmptySince > this.options.emptyResponseGraceMs) {
             tracePoll('AIBridge.send: poll');
@@ -158,18 +162,11 @@ export class AIBridge {
             );
             return;
           }
-          if (pollCount === 1 || pollCount % 5 === 0) tracePoll('AIBridge.send: poll');
         } else {
-          // Still generating — clear the grace timer.
           completeButEmptySince = null;
-          if (pollCount === 1 || pollCount % 5 === 0) {
-            const responseText = this.adapter.getLatestResponseText();
-            trace(
-              'AIBridge.send: poll',
-              `attempt=${pollCount} isComplete=${isComplete} textLen=${responseText.length} changedFromBaseline=${responseText !== baseline}`,
-            );
-          }
         }
+
+        if (pollCount === 1 || pollCount % 5 === 0) tracePoll('AIBridge.send: poll');
         setTimeout(poll, this.options.pollIntervalMs);
       };
       // Give the site a tick to register the send before the first poll.

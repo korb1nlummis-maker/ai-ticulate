@@ -106,4 +106,29 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     expect(result).toBe('the NEW response');
     expect(result).not.toBe('OLD stale response');
   });
+
+  it('resolves when the new response byte-matches the baseline (signal-based detection)', async () => {
+    // This is the live-test failure case that motivated the signal-based fix:
+    // ChatGPT returned a fresh assistant message whose text settled at exactly
+    // the same content as the previous turn (same-length, same-bytes by
+    // coincidence). String-equality (`responseText !== baseline`) would have
+    // rejected. Count-based detection resolves correctly because a NEW
+    // assistant turn appeared (signal incremented), regardless of text equality.
+    const adapter = new FakeAdapter();
+    adapter.scriptResponse('IDENTICAL response', { complete: true });
+
+    const bridge = new AIBridge(adapter, {
+      pollIntervalMs: 5,
+      timeoutMs: 1000,
+      sendDelayMs: 1,
+      sendFiredCheckMs: 0,
+    });
+    const promise = bridge.sendAndAwaitResponse('a new question');
+
+    // The new turn settles at the SAME text as the baseline.
+    setTimeout(() => adapter.scriptResponse('IDENTICAL response', { complete: true }), 30);
+
+    const result = await promise;
+    expect(result).toBe('IDENTICAL response');
+  });
 });

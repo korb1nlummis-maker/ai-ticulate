@@ -163,6 +163,13 @@ export class GeminiAdapter implements SiteAdapter {
     return stop === null;
   }
 
+  getResponseSignal(): number {
+    return (
+      document.querySelectorAll('message-content').length ||
+      document.querySelectorAll('.model-response-text').length
+    );
+  }
+
   diagnose(): AdapterDiagnostics {
     const input = this.findInput();
     const sendButton = this.findSendButton();

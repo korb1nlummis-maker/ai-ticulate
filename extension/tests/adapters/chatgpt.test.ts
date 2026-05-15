@@ -45,6 +45,21 @@ describe('ChatGPTAdapter', () => {
     expect(a.getCurrentInputText()).toContain('typed text');
   });
 
+  it('getResponseSignal counts assistant messages in the conversation', () => {
+    // Fixture contains 2 assistant-author messages.
+    expect(new ChatGPTAdapter().getResponseSignal()).toBe(2);
+  });
+
+  it('getResponseSignal increments when a new assistant message is added', () => {
+    const a = new ChatGPTAdapter();
+    const before = a.getResponseSignal();
+    const next = document.createElement('div');
+    next.setAttribute('data-message-author-role', 'assistant');
+    next.textContent = 'a fresh assistant turn';
+    document.body.appendChild(next);
+    expect(a.getResponseSignal()).toBe(before + 1);
+  });
+
   it('isResponseComplete is true when no stop-button is present', () => {
     expect(new ChatGPTAdapter().isResponseComplete()).toBe(true);
   });

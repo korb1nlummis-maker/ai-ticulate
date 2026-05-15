@@ -210,6 +210,10 @@ export class ClaudeAdapter implements SiteAdapter {
     return stop === null;
   }
 
+  getResponseSignal(): number {
+    return document.querySelectorAll('[data-testid="user-message"]').length;
+  }
+
   diagnose(): AdapterDiagnostics {
     const input = this.findInput();
     const sendButton = this.findSendButton();

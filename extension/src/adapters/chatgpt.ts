@@ -165,6 +165,10 @@ export class ChatGPTAdapter implements SiteAdapter {
     return stop === null;
   }
 
+  getResponseSignal(): number {
+    return document.querySelectorAll('[data-message-author-role="assistant"]').length;
+  }
+
   diagnose(): AdapterDiagnostics {
     const input = this.findInput();
     const sendButton = this.findSendButton();

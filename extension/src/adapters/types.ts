@@ -59,6 +59,17 @@ export interface SiteAdapter {
    */
   isResponseComplete(): boolean;
 
+  /**
+   * A monotonically-increasing-ish number that increments when a new assistant
+   * turn appears in the conversation. Used by the bridge to detect a new
+   * response far more reliably than comparing response text strings (which
+   * fails when a new response happens to byte-match a previous one).
+   *
+   * Simplest implementations: count the elements matching the adapter's
+   * primary response-container selector.
+   */
+  getResponseSignal(): number;
+
   /** Report what the adapter can and cannot find on the current page — for debugging. */
   diagnose(): AdapterDiagnostics;
 }
