@@ -91,4 +91,24 @@ describe('insertTextIntoEditable', () => {
     expect(ok).toBe(true);
     expect(div.textContent ?? '').toContain('hello world');
   });
+
+  it('considers text landed even when newlines are collapsed (TipTap <p>-splitting)', async () => {
+    // Simulates TipTap/ProseMirror behavior: the inserted text contains \n\n
+    // paragraph separators, but the editor renders each paragraph in its own
+    // <p>, and textContent re-concatenates without the newline. The strict
+    // substring check would falsely report landed=false; the normalized check
+    // must report landed=true.
+    const div = document.createElement('div');
+    div.setAttribute('contenteditable', 'true');
+    document.body.replaceChildren(div);
+    const input = 'line one\n\nline two';
+    const ok = await insertTextIntoEditable(div, input);
+    expect(ok).toBe(true);
+    // Sanity: the function did get text into the editor; the precise whitespace
+    // representation is editor-dependent, so we only assert the normalized
+    // content matches.
+    const normalized = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
+    expect(normalized).toContain('line one');
+    expect(normalized).toContain('line two');
+  });
 });

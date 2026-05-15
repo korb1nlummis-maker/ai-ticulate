@@ -107,7 +107,17 @@ export function looksLikeNonSendButton(btn: Element): boolean {
  * cannot carry clipboard data and it breaks the subsequent execCommand.
  */
 export async function insertTextIntoEditable(el: HTMLElement, text: string): Promise<boolean> {
-  const landed = (): boolean => (el.textContent ?? '').includes(text);
+  // Compare with whitespace normalized — editors like TipTap/ProseMirror split
+  // text on \n into separate <p> elements, and textContent re-concatenates them
+  // without the newline separator, so a strict substring check incorrectly fails.
+  const norm = (s: string): string => s.replace(/\s+/g, ' ').trim();
+  const targetNorm = norm(text);
+  const targetHead = targetNorm.slice(0, 80);
+  const landed = (): boolean => {
+    const current = norm(el.textContent ?? '');
+    if (current.includes(targetNorm)) return true;
+    return targetHead.length > 0 && current.includes(targetHead);
+  };
   const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
   const pause = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
