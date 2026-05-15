@@ -150,6 +150,22 @@ Per the user's request to make the diagnostic tracker catch all issues at once: 
 
 Commit: ed5ec31
 
+### Live-test fix #10 — the isReady() deadlock (root cause found)
+
+The expanded execution-trace diagnostic immediately pinpointed what 9 rounds of guessing had missed. The trace showed the flow dying 1ms in: `AIBridge.send: adapter not ready` — it was quitting before it ever tried to type.
+
+**Root cause:** all three adapters' `isReady()` required BOTH `findInput()` AND `findSendButton()`. But these sites only render the send button once the input has text — and our flow starts with an empty input. So `findSendButton()` was null → `isReady()` false → the bridge threw "not ready" before typing. A chicken-and-egg deadlock: no send button because nothing's typed, won't type because no send button.
+
+This was masked for rounds 1-5 because `findSendButton` was wrongly matching the "Add files, connectors, and more" button, making `isReady()` accidentally pass. Fix #6's correct non-send-button exclusion exposed the latent deadlock.
+
+**Fix:** `isReady()` now only requires the input to exist. The send button's absence on an empty input is normal, and the Enter-key send doesn't need the button. One-line change per adapter, plus a regression test per adapter.
+
+This is the single highest-value fix of the live-test cycle — and concrete proof of why the trace diagnostic was worth building.
+
+82 tests passing.
+
+Commit: dcca7f9
+
 ---
 
 ## 2026-05-14 — Extension merged to main; v1 built
