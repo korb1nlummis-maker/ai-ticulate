@@ -150,6 +150,16 @@ Per the user's request to make the diagnostic tracker catch all issues at once: 
 
 Commit: ed5ec31
 
+### Live-test fix #11 — whitespace-tolerant landed() check
+
+Fix #10 unblocked the deadlock; this round's diagnostic showed the meta-prompt actually landing in Claude's editor — but the flow still threw "could not type." The trace pinpointed the cause exactly: `landed()` was doing a STRICT substring check (`el.textContent.includes(text)`), and TipTap converts `\n\n` paragraph breaks in the inserted text into separate `<p>` elements. `Element.textContent` concatenates those without the newline separator, so the original `text` (which has literal `\n` characters) isn't a substring of `el.textContent` (which doesn't) — even though the text content is identical otherwise. A false negative on success → retries → throws.
+
+**Fix:** whitespace-normalize both sides of the comparison (`.replace(/\s+/g, ' ').trim()`). Added a prefix-match fallback for partial-but-substantive insertion. One small block in `insertTextIntoEditable`.
+
+83 tests passing.
+
+Commit: d0261d9
+
 ### Live-test fix #10 — the isReady() deadlock (root cause found)
 
 The expanded execution-trace diagnostic immediately pinpointed what 9 rounds of guessing had missed. The trace showed the flow dying 1ms in: `AIBridge.send: adapter not ready` — it was quitting before it ever tried to type.
