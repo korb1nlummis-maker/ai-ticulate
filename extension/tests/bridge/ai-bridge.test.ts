@@ -107,6 +107,37 @@ describe('AIBridge.sendAndAwaitResponse', () => {
     expect(result).not.toBe('OLD stale response');
   });
 
+  it('resolves via text-stability when isResponseComplete stays false but the text has stopped growing', async () => {
+    // This is the live-test failure that motivated the fallback: Claude's
+    // stop-generating indicator stuck around (artifact rendering / tool-use
+    // UI / selector match drift) long after the readable reply had finished
+    // streaming. The bridge should resolve once the text has been stable for
+    // textStableMs, even with isResponseComplete() still false.
+    const adapter = new FakeAdapter();
+    const bridge = new AIBridge(adapter, {
+      pollIntervalMs: 5,
+      timeoutMs: 2000,
+      textStableMs: 40,
+      sendDelayMs: 1,
+      sendFiredCheckMs: 0,
+    });
+    const promise = bridge.sendAndAwaitResponse('a question');
+
+    // A new turn appears (signal increments) and text streams in — but the
+    // site never reports complete: true. Text then stops growing.
+    setTimeout(
+      () => adapter.scriptResponse('streaming...', { complete: false, newTurn: true }),
+      10,
+    );
+    setTimeout(
+      () => adapter.scriptResponse('streaming... finished', { complete: false }),
+      25,
+    );
+
+    const result = await promise;
+    expect(result).toBe('streaming... finished');
+  });
+
   it('resolves when the new response byte-matches the baseline (signal-based detection)', async () => {
     // This is the live-test failure case that motivated the signal-based fix:
     // ChatGPT returned a fresh assistant message whose text settled at exactly

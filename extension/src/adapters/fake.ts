@@ -48,17 +48,17 @@ export class FakeAdapter implements SiteAdapter {
   }
 
   /** Test helper: script what the AI "replied" to the last sent message. */
-  scriptResponse(text: string, opts: { complete: boolean }): void {
-    // Each `complete: true` call represents an assistant turn arriving — that's
-    // what the bridge keys off via getResponseSignal(). We bump the signal
-    // unconditionally on complete:true (regardless of text content), modelling
-    // the live-site DOM where a new <assistant message> element appears even
-    // if the rendered text happens to be empty / unreadable / identical to a
-    // prior turn. Streaming-only (complete:false) updates don't count.
-    const becomingNewTurn = opts.complete;
+  scriptResponse(text: string, opts: { complete: boolean; newTurn?: boolean }): void {
+    // `complete: true` implies a new assistant turn (matches live-site DOM:
+    // a new <assistant message> element appears when the turn becomes
+    // visible). `newTurn` can be set independently when the test needs to
+    // model "a new turn rendered but the site never reports complete" —
+    // e.g., a stuck stop-generating indicator while text has already
+    // finished streaming.
+    const isNewTurn = opts.newTurn ?? opts.complete;
     this.responseText = text;
     this.complete = opts.complete;
-    if (becomingNewTurn) this._signal += 1;
+    if (isNewTurn) this._signal += 1;
   }
 
   diagnose(): AdapterDiagnostics {

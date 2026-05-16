@@ -10,6 +10,27 @@ Append-only project journal. **Newest entries at the top.** Each entry timestamp
 
 ---
 
+## 2026-05-16 — v0.1.2: text-stability completion fallback
+
+User-reported live-test failure: submitted a final prompt to Claude. The bridge polled 290 times over 122 seconds and timed out, even though the trace clearly showed the response had streamed in fully (516 chars), then sat unchanged for 22 seconds before timeout. Diagnostics:
+
+```
++98972ms  via=font-claude-response-body count=1 returnedLen=516
+...22 seconds of identical-length polls, isComplete=false the whole way...
++121824ms via=font-claude-response-body count=1 returnedLen=516
++122240ms TIMED OUT
+```
+
+**Root cause:** `ClaudeAdapter.isResponseComplete()` checks for the absence of a stop-generating button (`[data-testid="stop-button"]`, `button[aria-label*="Stop" i]`). On this turn, that selector kept matching *something* well past the actual end of the readable reply — likely an artifact panel / tool-use UI / extended-thinking spinner staying mounted, or the selector drifting to match an unrelated Stop-labeled control. Either way: the user's answer was sitting right there in their Claude chat, but the extension errored out instead of showing the done view.
+
+**Fix:** added a text-stability fallback to `AIBridge`. If a new turn has appeared AND the response text is non-empty AND non-echo AND hasn't changed for `textStableMs` (default 10s), resolve regardless of `isResponseComplete()`. The happy path (isComplete fires fast) still wins; the fallback only kicks in when isComplete is stuck.
+
+Also bumped the absolute timeout default from 120s → 240s, so genuinely long answers don't get killed prematurely. With the text-stability path, the full 240s only matters if streaming continues nonstop for that long.
+
+New `FakeAdapter.scriptResponse(..., { newTurn: true })` lets tests model "a new turn appears but completion never fires" — used by the new test `resolves via text-stability when isResponseComplete stays false but the text has stopped growing`.
+
+106/106 tests passing. Typecheck clean. Both Chrome and Firefox builds succeed.
+
 ## 2026-05-15 — v0.1.1: keystroke isolation + dark-mode primary button
 
 Two user-reported bugs from v0.1.0 after the shadow DOM landed:

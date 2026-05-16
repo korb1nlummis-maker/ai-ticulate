@@ -29,14 +29,24 @@ export type AIBridgeOptions = {
    * than waiting the full timeout. Set to 0 to skip the check.
    */
   sendFiredCheckMs: number;
+  /**
+   * Fallback completion path. If a new turn has appeared and the response
+   * text has been non-empty AND unchanged for this long, treat the response
+   * as done even if `isResponseComplete()` is still returning false. This
+   * catches the case where the host site's "stop generating" indicator gets
+   * stuck (artifact rendering, tool-use UI, a selector match drift) but the
+   * actual readable reply has finished streaming.
+   */
+  textStableMs: number;
 };
 
 const DEFAULT_OPTIONS: AIBridgeOptions = {
   pollIntervalMs: 400,
-  timeoutMs: 120_000,
+  timeoutMs: 240_000,
   emptyResponseGraceMs: 8_000,
   sendDelayMs: 350,
   sendFiredCheckMs: 1500,
+  textStableMs: 10_000,
 };
 
 function delay(ms: number): Promise<void> {
@@ -119,6 +129,10 @@ export class AIBridge {
     // early exit.
     let completeButEmptySince: number | null = null;
     let pollCount = 0;
+    // Track the last non-empty text and when it last changed, so we can resolve
+    // via the text-stability fallback if isResponseComplete() gets stuck.
+    let lastSeenText = '';
+    let lastChangeAt = Date.now();
     return new Promise<string>((resolve, reject) => {
       const poll = (): void => {
         pollCount++;
@@ -139,10 +153,36 @@ export class AIBridge {
           );
         };
 
+        if (responseText !== lastSeenText) {
+          lastSeenText = responseText;
+          lastChangeAt = Date.now();
+        }
+
         if (isComplete && newTurnExists && responseText.length > 0 && !isEcho) {
           // Happy path: complete, a new turn exists, and we can read it.
           tracePoll('AIBridge.send: poll');
           trace('AIBridge.send: RESOLVED', 'textLen=' + responseText.length);
+          resolve(responseText);
+          return;
+        }
+
+        // Text-stability fallback: a new turn appeared, the text has been
+        // non-empty and non-echo, and it has stopped changing for textStableMs.
+        // Treat that as effectively complete — covers the case where the
+        // host site's "still generating" indicator gets stuck (artifacts,
+        // tool-use UI, a stale spinner) even though the readable reply is
+        // done.
+        if (
+          newTurnExists &&
+          responseText.length > 0 &&
+          !isEcho &&
+          Date.now() - lastChangeAt >= this.options.textStableMs
+        ) {
+          tracePoll('AIBridge.send: poll (text-stable)');
+          trace(
+            'AIBridge.send: RESOLVED via text-stability',
+            `textLen=${responseText.length} stableMs=${Date.now() - lastChangeAt}`,
+          );
           resolve(responseText);
           return;
         }
